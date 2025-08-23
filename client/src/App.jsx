@@ -7,6 +7,7 @@ import Faq from "./pages/Faq";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import Dashboard from "./pages/Dashboard";
+import Transactions from "./pages/Transactions";
 import Footer from "./components/Footer";
 
 function App() {
@@ -35,6 +36,8 @@ function App() {
         return <SignupPage setCurrentPage={setCurrentPage} setIsAuthenticated={setIsAuthenticated} />;
       case "dashboard":
         return <Dashboard setCurrentPage={setCurrentPage} setIsAuthenticated={setIsAuthenticated} />;
+      case "transactions":
+        return <Transactions setCurrentPage={setCurrentPage} setIsAuthenticated={setIsAuthenticated} />;
       default:
         return <Homepage />;
     }
@@ -42,11 +45,11 @@ function App() {
 
   return (
     <div className="min-h-screen bg-white">
-      {currentPage !== "dashboard" && (
+      {currentPage !== "dashboard" && currentPage !== "transactions" && (
         <Header currentPage={currentPage} setCurrentPage={setCurrentPage} isAuthenticated={isAuthenticated} />
       )}
       {renderPage()}
-      {currentPage !== "dashboard" && <Footer />}
+      {currentPage !== "dashboard" && currentPage !== "transactions" && <Footer />}
     </div>
   );
 }

@@ -1,19 +1,37 @@
 import React, { useState, useEffect } from "react";
 import SimpleTradingChart from "../components/SimpleTradingChart";
+import { userAPI } from "../services/api";
 
 const Dashboard = ({ setCurrentPage, setIsAuthenticated }) => {
   const [user, setUser] = useState(null);
-  const [balance] = useState(0);
-  const [earnings] = useState(0.00);
-  const [activeDeposit] = useState(0.00);
-  const [totalDeposit] = useState(0.00);
-  const [totalWithdraws] = useState(0.00);
+  const [dashboardData, setDashboardData] = useState({
+    balance: 0,
+    earnings: 0.00,
+    activeDeposit: 0.00,
+    totalDeposit: 0.00,
+    totalWithdraws: 0.00
+  });
+  const [loading, setLoading] = useState(true);
+
+  const fetchDashboardData = async () => {
+    try {
+      const response = await userAPI.getDashboardData();
+      if (response.success) {
+        setDashboardData(response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
     if (userData) {
       setUser(JSON.parse(userData));
     }
+    fetchDashboardData();
   }, []);
 
   const handleLogout = () => {
@@ -58,7 +76,9 @@ const Dashboard = ({ setCurrentPage, setIsAuthenticated }) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-600 text-sm mb-1">Total Balance</p>
-              <h1 className="text-4xl font-bold text-gray-900">${balance}</h1>
+              <h1 className="text-4xl font-bold text-gray-900">
+                {loading ? "..." : `$${dashboardData.balance}`}
+              </h1>
             </div>
             <button className="p-3 bg-gray-100 rounded-lg">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -79,7 +99,10 @@ const Dashboard = ({ setCurrentPage, setIsAuthenticated }) => {
             <span className="text-sm font-medium">Invest</span>
           </button>
           
-          <button className="flex-1 flex flex-col items-center p-4 bg-purple-600 text-white rounded-xl">
+          <button 
+            onClick={() => setCurrentPage("transactions")}
+            className="flex-1 flex flex-col items-center p-4 bg-purple-600 text-white rounded-xl"
+          >
             <div className="w-10 h-10 bg-white bg-opacity-20 rounded-lg flex items-center justify-center mb-2">
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -102,22 +125,30 @@ const Dashboard = ({ setCurrentPage, setIsAuthenticated }) => {
         <div className="grid grid-cols-2 gap-4">
           <div className="bg-white rounded-xl p-4 shadow-sm">
             <p className="text-gray-600 text-sm mb-1">Earnings</p>
-            <p className="text-2xl font-bold text-green-500">${earnings.toFixed(2)}</p>
+            <p className="text-2xl font-bold text-green-500">
+              {loading ? "..." : `$${dashboardData.earnings.toFixed(2)}`}
+            </p>
           </div>
           
           <div className="bg-white rounded-xl p-4 shadow-sm">
             <p className="text-gray-600 text-sm mb-1">Active Deposit</p>
-            <p className="text-2xl font-bold text-gray-900">${activeDeposit.toFixed(2)}</p>
+            <p className="text-2xl font-bold text-gray-900">
+              {loading ? "..." : `$${dashboardData.activeDeposit.toFixed(2)}`}
+            </p>
           </div>
           
           <div className="bg-white rounded-xl p-4 shadow-sm">
             <p className="text-gray-600 text-sm mb-1">Total Deposit</p>
-            <p className="text-2xl font-bold text-gray-900">${totalDeposit.toFixed(2)}</p>
+            <p className="text-2xl font-bold text-gray-900">
+              {loading ? "..." : `$${dashboardData.totalDeposit.toFixed(2)}`}
+            </p>
           </div>
           
           <div className="bg-white rounded-xl p-4 shadow-sm">
             <p className="text-gray-600 text-sm mb-1">Total Withdraws</p>
-            <p className="text-2xl font-bold text-pink-500">${totalWithdraws.toFixed(2)}</p>
+            <p className="text-2xl font-bold text-pink-500">
+              {loading ? "..." : `$${dashboardData.totalWithdraws.toFixed(2)}`}
+            </p>
           </div>
         </div>
 
@@ -185,7 +216,10 @@ const Dashboard = ({ setCurrentPage, setIsAuthenticated }) => {
             <span className="text-xs">Dashboard</span>
           </button>
           
-          <button className="flex flex-col items-center p-2 text-gray-400">
+          <button 
+            onClick={() => setCurrentPage("transactions")}
+            className="flex flex-col items-center p-2 text-gray-400"
+          >
             <svg className="w-6 h-6 mb-1" fill="currentColor" viewBox="0 0 20 20">
               <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>

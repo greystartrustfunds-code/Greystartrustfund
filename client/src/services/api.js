@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -42,6 +42,40 @@ export const authAPI = {
   
   getProfile: async () => {
     const response = await api.get('/auth/profile');
+    return response.data;
+  }
+};
+
+export const transactionAPI = {
+  getTransactions: async (filters = {}) => {
+    const response = await api.get('/transactions', { params: filters });
+    return response.data;
+  },
+  
+  createTransaction: async (transactionData) => {
+    const response = await api.post('/transactions', transactionData);
+    return response.data;
+  },
+  
+  getTransactionById: async (id) => {
+    const response = await api.get(`/transactions/${id}`);
+    return response.data;
+  }
+};
+
+export const userAPI = {
+  getDashboardData: async () => {
+    const response = await api.get('/user/dashboard');
+    return response.data;
+  },
+  
+  updateProfile: async (userData) => {
+    const response = await api.put('/user/profile', userData);
+    return response.data;
+  },
+  
+  getBalance: async () => {
+    const response = await api.get('/user/balance');
     return response.data;
   }
 };
