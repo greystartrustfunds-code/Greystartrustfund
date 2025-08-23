@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import connectDB from "./config/database.js";
 import authRoutes from "./routes/auth.js";
+import contactRoutes from "./routes/contact.js";
 
 dotenv.config();
 
@@ -36,9 +37,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api/auth", authRoutes);
+app.use("/api/contact", contactRoutes);
 
 app.get("/", (req, res) => {
-  res.json({ message: "GreyStar Trust Fund API Server" });
+  res.json({ message: "GREYSTAR TRUST FUND API Server" });
 });
 
 const PORT = process.env.PORT || 5000;

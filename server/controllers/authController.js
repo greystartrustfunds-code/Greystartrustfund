@@ -122,4 +122,21 @@ const getProfile = async (req, res) => {
   }
 };
 
-export { signup, login, getProfile };
+// @desc    Get total number of users (Admin only)
+// @route   GET /api/auth/users/count
+// @access  Private/Admin
+const getTotalUsers = async (req, res) => {
+  try {
+    if (req.user && req.user.role === 'admin') {
+      const userCount = await User.countDocuments({});
+      res.status(200).json({ success: true, count: userCount });
+    } else {
+      res.status(403).json({ success: false, message: 'Not authorized as an admin' });
+    }
+  } catch (error) {
+    console.error('Get total users error:', error);
+    res.status(500).json({ success: false, message: 'Server error fetching user count' });
+  }
+};
+
+export { signup, login, getProfile, getTotalUsers };

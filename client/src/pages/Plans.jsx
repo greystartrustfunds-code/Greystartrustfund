@@ -1,6 +1,53 @@
 import React, { useState, useEffect } from "react";
 import { userAPI } from "../services/api";
 
+const plans = [
+  {
+    id: "starter",
+    name: "Starter Plan",
+    profit: 12,
+    duration: "20 hours",
+    minAmount: 25,
+    maxAmount: 599,
+    type: "profit",
+  },
+  {
+    id: "basic",
+    name: "Basic Plan",
+    profit: 15,
+    duration: "48 hours",
+    minAmount: 600,
+    maxAmount: 999,
+    type: "profit",
+  },
+  {
+    id: "professional",
+    name: "Professional Plan",
+    profit: 30,
+    duration: "72 hours",
+    minAmount: 1000,
+    maxAmount: 9999,
+    type: "profit",
+  },
+  {
+    id: "vip",
+    name: "Vip Plan",
+    profit: 60,
+    duration: "24 hours",
+    minAmount: 10000,
+    maxAmount: Infinity,
+    type: "daily",
+  },
+];
+
+const walletOptions = [
+  { id: "bitcoin", label: "Deposit funds from Company Bitcoin wallet" },
+  { id: "usdt", label: "Deposit funds from Company USDT wallet" },
+  { id: "tron", label: "Deposit funds from Company Tron wallet" },
+  { id: "usdc", label: "Deposit funds from Company USDC wallet" },
+  { id: "bep20", label: "Deposit funds from Company bep20 wallet address" },
+];
+
 const Plans = ({ setCurrentPage, setIsAuthenticated }) => {
   const [selectedPlan, setSelectedPlan] = useState("");
   const [selectedWallet, setSelectedWallet] = useState("bitcoin");
@@ -8,52 +55,7 @@ const Plans = ({ setCurrentPage, setIsAuthenticated }) => {
   const [accountBalance, setAccountBalance] = useState(0);
   const [calculatedProfit, setCalculatedProfit] = useState(0);
 
-  const plans = [
-    {
-      id: "starter",
-      name: "Starter Plan",
-      profit: 12,
-      duration: "20 hours",
-      minAmount: 25,
-      maxAmount: 599,
-      type: "profit",
-    },
-    {
-      id: "basic",
-      name: "Basic Plan",
-      profit: 15,
-      duration: "48 hours",
-      minAmount: 600,
-      maxAmount: 999,
-      type: "profit",
-    },
-    {
-      id: "professional",
-      name: "Professional Plan",
-      profit: 30,
-      duration: "72 hours",
-      minAmount: 1000,
-      maxAmount: 9999,
-      type: "profit",
-    },
-    {
-      id: "vip",
-      name: "Vip Plan",
-      profit: 60,
-      duration: "24 hours",
-      minAmount: 10000,
-      maxAmount: Infinity,
-      type: "daily",
-    },
-  ];
-
-  const walletOptions = [
-    { id: "bitcoin", label: "Deposit funds from Company Bitcoin wallet" },
-    { id: "usdt", label: "Deposit funds from Company USDT wallet" },
-    { id: "tron", label: "Deposit funds from Company Tron wallet" },
-    { id: "usdc", label: "Deposit funds from Company USDC wallet" },
-    { id: "bep20", label: "Deposit funds from Company bep20 wallet address" },
-  ];
+  // using hoisted `plans` and `walletOptions` defined above
 
   useEffect(() => {
     fetchAccountBalance();
@@ -61,7 +63,17 @@ const Plans = ({ setCurrentPage, setIsAuthenticated }) => {
 
   useEffect(() => {
     if (selectedPlan && depositAmount) {
-      calculateProfit();
+      const plan = plans.find((p) => p.id === selectedPlan);
+      const amount = parseFloat(depositAmount);
+
+      if (plan && amount >= plan.minAmount && amount <= plan.maxAmount) {
+        const profit = (amount * plan.profit) / 100;
+        setCalculatedProfit(profit);
+      } else {
+        setCalculatedProfit(0);
+      }
+    } else {
+      setCalculatedProfit(0);
     }
   }, [selectedPlan, depositAmount]);
 
@@ -72,18 +84,6 @@ const Plans = ({ setCurrentPage, setIsAuthenticated }) => {
     } catch (error) {
       console.error("Error fetching balance:", error);
       setAccountBalance(0);
-    }
-  };
-
-  const calculateProfit = () => {
-    const plan = plans.find((p) => p.id === selectedPlan);
-    const amount = parseFloat(depositAmount);
-
-    if (plan && amount >= plan.minAmount && amount <= plan.maxAmount) {
-      const profit = (amount * plan.profit) / 100;
-      setCalculatedProfit(profit);
-    } else {
-      setCalculatedProfit(0);
     }
   };
 
@@ -131,9 +131,9 @@ const Plans = ({ setCurrentPage, setIsAuthenticated }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-900 text-white">
       {/* Header */}
-      <header className="bg-black text-white px-4 py-3 flex items-center justify-between">
+      <header className="bg-slate-900 text-white px-4 py-3 flex items-center justify-between border-b border-slate-700">
         <button className="p-2">
           <svg
             className="w-6 h-6"
@@ -152,7 +152,7 @@ const Plans = ({ setCurrentPage, setIsAuthenticated }) => {
 
         <div className="flex items-center space-x-2">
           <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-          <span className="text-sm font-medium">GreyStartTrust Fund</span>
+          <span className="text-sm font-medium font-rubik">GreyStar</span>
         </div>
 
         <button onClick={handleLogout} className="p-2">
@@ -174,18 +174,19 @@ const Plans = ({ setCurrentPage, setIsAuthenticated }) => {
 
       {/* Main Content */}
       <div className="px-4 py-6 space-y-6">
-        <div className="bg-white rounded-xl p-6 shadow-sm">
-          <h1 className="text-xl font-bold text-gray-900 mb-6">
-            Make a Deposit:
-          </h1>
+        <div className="bg-slate-800 rounded-xl p-6 shadow-sm border border-slate-700">
+          <h1 className="text-xl font-bold text-white mb-6">Make a Deposit:</h1>
 
           <div className="mb-6">
-            <h2 className="text-lg font-semibold text-gray-700 mb-4">
+            <h2 className="text-lg font-semibold text-gray-300 mb-4">
               Select a plan:
             </h2>
 
             {plans.map((plan) => (
-              <div key={plan.id} className="mb-4 p-4 bg-gray-50 rounded-xl">
+              <div
+                key={plan.id}
+                className="mb-4 p-4 bg-slate-800 rounded-xl border border-slate-700"
+              >
                 <div className="flex items-center mb-3">
                   <input
                     type="radio"
@@ -194,11 +195,11 @@ const Plans = ({ setCurrentPage, setIsAuthenticated }) => {
                     value={plan.id}
                     checked={selectedPlan === plan.id}
                     onChange={() => handlePlanSelect(plan.id)}
-                    className="mr-3 text-purple-600"
+                    className="mr-3 text-red-400"
                   />
                   <label
                     htmlFor={plan.id}
-                    className="text-lg font-medium text-gray-900"
+                    className="text-lg font-medium text-white"
                   >
                     {plan.profit}% after {plan.duration}
                   </label>
@@ -207,14 +208,14 @@ const Plans = ({ setCurrentPage, setIsAuthenticated }) => {
                 <div className="overflow-x-auto mb-3">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b border-gray-200">
-                        <th className="text-left py-2 text-gray-600 text-sm">
+                      <tr className="border-b border-slate-700">
+                        <th className="text-left py-2 text-gray-300 text-sm">
                           Plan
                         </th>
-                        <th className="text-left py-2 text-gray-600 text-sm">
+                        <th className="text-left py-2 text-gray-300 text-sm">
                           Spent Amount ($)
                         </th>
-                        <th className="text-left py-2 text-gray-600 text-sm">
+                        <th className="text-left py-2 text-gray-300 text-sm">
                           {plan.type === "daily"
                             ? "Daily Profit (%)"
                             : "Profit (%)"}
@@ -223,16 +224,14 @@ const Plans = ({ setCurrentPage, setIsAuthenticated }) => {
                     </thead>
                     <tbody>
                       <tr>
-                        <td className="py-2 text-gray-900 text-sm">
-                          {plan.name}
-                        </td>
-                        <td className="py-2 text-gray-900 text-sm">
+                        <td className="py-2 text-white text-sm">{plan.name}</td>
+                        <td className="py-2 text-white text-sm">
                           ${plan.minAmount.toFixed(2)} -{" "}
                           {plan.maxAmount === Infinity
                             ? "∞"
                             : `$${plan.maxAmount.toFixed(2)}`}
                         </td>
-                        <td className="py-2 text-gray-900 text-sm">
+                        <td className="py-2 text-white text-sm">
                           {plan.profit.toFixed(2)}
                         </td>
                       </tr>
@@ -241,17 +240,17 @@ const Plans = ({ setCurrentPage, setIsAuthenticated }) => {
                 </div>
 
                 <button
-                  className="text-purple-600 hover:text-purple-800 font-medium text-sm"
+                  className="text-red-400 hover:text-red-300 font-medium text-sm"
                   onClick={() => handlePlanSelect(plan.id)}
                 >
                   Calculate your profit &gt;&gt;
                 </button>
 
                 {selectedPlan === plan.id && calculatedProfit > 0 && (
-                  <div className="mt-3 p-3 bg-purple-50 rounded-lg">
-                    <p className="text-purple-800 text-sm">
+                  <div className="mt-3 p-3 bg-slate-700 rounded-lg">
+                    <p className="text-red-400 text-sm">
                       Expected profit:{" "}
-                      <span className="font-bold">
+                      <span className="font-bold text-white">
                         ${calculatedProfit.toFixed(2)}
                       </span>
                     </p>
@@ -261,18 +260,18 @@ const Plans = ({ setCurrentPage, setIsAuthenticated }) => {
             ))}
           </div>
 
-          <div className="bg-gray-50 rounded-xl p-4 space-y-4">
+          <div className="bg-slate-800 rounded-xl p-4 space-y-4 border border-slate-700">
             <div className="flex justify-between items-center">
-              <span className="text-gray-700 text-sm">
+              <span className="text-gray-300 text-sm">
                 Your account balance ($):
               </span>
-              <span className="font-bold text-gray-900">
+              <span className="font-bold text-white">
                 ${accountBalance.toFixed(2)}
               </span>
             </div>
 
             <div className="flex justify-between items-center">
-              <label htmlFor="depositAmount" className="text-gray-700 text-sm">
+              <label htmlFor="depositAmount" className="text-gray-300 text-sm">
                 Amount to Spend ($):
               </label>
               <input
@@ -280,7 +279,7 @@ const Plans = ({ setCurrentPage, setIsAuthenticated }) => {
                 id="depositAmount"
                 value={depositAmount}
                 onChange={(e) => setDepositAmount(e.target.value)}
-                className="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+                className="w-24 px-3 py-2 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm bg-slate-700 text-white"
                 min="25"
                 step="0.01"
               />
@@ -296,9 +295,9 @@ const Plans = ({ setCurrentPage, setIsAuthenticated }) => {
                     value={wallet.id}
                     checked={selectedWallet === wallet.id}
                     onChange={(e) => setSelectedWallet(e.target.value)}
-                    className="mr-3 text-purple-600"
+                    className="mr-3 text-red-400"
                   />
-                  <label htmlFor={wallet.id} className="text-gray-700 text-sm">
+                  <label htmlFor={wallet.id} className="text-gray-300 text-sm">
                     {wallet.label}
                   </label>
                 </div>
@@ -307,7 +306,7 @@ const Plans = ({ setCurrentPage, setIsAuthenticated }) => {
 
             <button
               onClick={handleDeposit}
-              className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg transition duration-200"
+              className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-lg transition duration-200"
             >
               Deposit
             </button>
@@ -319,11 +318,11 @@ const Plans = ({ setCurrentPage, setIsAuthenticated }) => {
       </div>
 
       {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-2">
+      <div className="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-700 px-4 py-2">
         <div className="flex justify-around">
           <button
             onClick={() => setCurrentPage("dashboard")}
-            className="flex flex-col items-center p-2 text-gray-400"
+            className="flex flex-col items-center p-2 text-gray-300"
           >
             <svg
               className="w-6 h-6 mb-1"
@@ -337,7 +336,7 @@ const Plans = ({ setCurrentPage, setIsAuthenticated }) => {
 
           <button
             onClick={() => setCurrentPage("transactions")}
-            className="flex flex-col items-center p-2 text-gray-400"
+            className="flex flex-col items-center p-2 text-gray-300"
           >
             <svg
               className="w-6 h-6 mb-1"
@@ -349,7 +348,7 @@ const Plans = ({ setCurrentPage, setIsAuthenticated }) => {
             <span className="text-xs">Transactions</span>
           </button>
 
-          <button className="flex flex-col items-center p-2 text-purple-600">
+          <button className="flex flex-col items-center p-2 text-red-400">
             <svg
               className="w-6 h-6 mb-1"
               fill="currentColor"
@@ -364,7 +363,7 @@ const Plans = ({ setCurrentPage, setIsAuthenticated }) => {
             <span className="text-xs">Plans</span>
           </button>
 
-          <button className="flex flex-col items-center p-2 text-gray-400">
+          <button className="flex flex-col items-center p-2 text-gray-300">
             <svg
               className="w-6 h-6 mb-1"
               fill="currentColor"

@@ -3,7 +3,6 @@ import SimpleTradingChart from "../components/SimpleTradingChart";
 import { userAPI } from "../services/api";
 
 const Dashboard = ({ setCurrentPage, setIsAuthenticated }) => {
-  const [user, setUser] = useState(null);
   const [dashboardData, setDashboardData] = useState({
     balance: 0,
     earnings: 0.0,
@@ -27,10 +26,6 @@ const Dashboard = ({ setCurrentPage, setIsAuthenticated }) => {
   };
 
   useEffect(() => {
-    const userData = localStorage.getItem("user");
-    if (userData) {
-      setUser(JSON.parse(userData));
-    }
     fetchDashboardData();
   }, []);
 
@@ -42,15 +37,15 @@ const Dashboard = ({ setCurrentPage, setIsAuthenticated }) => {
   };
 
   const copyReferralLink = () => {
-    const referralLink = "https://GreyStartTrust Fund-energy.com/?ref=tobi";
+    const referralLink = "https://GREYSTAR TRUST FUND-energy.com/?ref=tobi";
     navigator.clipboard.writeText(referralLink);
     alert("Referral link copied to clipboard!");
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-900 text-white">
       {/* Header */}
-      <header className="bg-black text-white px-4 py-3 flex items-center justify-between">
+      <header className="bg-slate-900 text-white px-4 py-3 flex items-center justify-between border-b border-slate-700">
         <button className="p-2">
           <svg
             className="w-6 h-6"
@@ -69,7 +64,7 @@ const Dashboard = ({ setCurrentPage, setIsAuthenticated }) => {
 
         <div className="flex items-center space-x-2">
           <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-          <span className="text-sm font-medium">GreyStartTrust Fund</span>
+          <span className="text-sm font-medium font-rubik">GreyStar</span>
         </div>
 
         <button onClick={handleLogout} className="p-2">
@@ -92,15 +87,15 @@ const Dashboard = ({ setCurrentPage, setIsAuthenticated }) => {
       {/* Main Content */}
       <div className="px-4 py-6 space-y-6">
         {/* Total Balance Card */}
-        <div className="bg-white rounded-xl p-6 shadow-sm">
+        <div className="bg-slate-800 rounded-xl p-6 shadow-sm border border-slate-700 text-white">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-600 text-sm mb-1">Total Balance</p>
-              <h1 className="text-4xl font-bold text-gray-900">
+              <p className="text-gray-300 text-sm mb-1">Total Balance</p>
+              <h1 className="text-4xl font-bold text-white">
                 {loading ? "..." : `$${dashboardData.balance}`}
               </h1>
             </div>
-            <button className="p-3 bg-gray-100 rounded-lg">
+            <button className="p-3 bg-slate-700 rounded-lg text-red-400">
               <svg
                 className="w-6 h-6"
                 fill="none"
@@ -120,13 +115,9 @@ const Dashboard = ({ setCurrentPage, setIsAuthenticated }) => {
 
         {/* Action Buttons */}
         <div className="flex justify-between space-x-4">
-          <button className="flex-1 flex flex-col items-center p-4 bg-orange-500 text-white rounded-xl">
-            <div className="w-10 h-10 bg-white bg-opacity-20 rounded-lg flex items-center justify-center mb-2">
-              <svg
-                className="w-5 h-5 text-orange-500"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
+          <button className="flex-1 flex flex-col items-center p-4 bg-red-500 text-white rounded-xl">
+            <div className="w-10 h-10 bg-slate-700 text-red-400 rounded-lg flex items-center justify-center mb-2">
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                 <path
                   fillRule="evenodd"
                   d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z"
@@ -141,12 +132,8 @@ const Dashboard = ({ setCurrentPage, setIsAuthenticated }) => {
             onClick={() => setCurrentPage("transactions")}
             className="flex-1 flex flex-col items-center p-4 bg-purple-600 text-white rounded-xl"
           >
-            <div className="w-10 h-10 bg-white bg-opacity-20 rounded-lg flex items-center justify-center mb-2">
-              <svg
-                className="w-5 h-5 text-purple-600"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
+            <div className="w-10 h-10 bg-slate-700 text-purple-400 rounded-lg flex items-center justify-center mb-2">
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                 <path
                   fillRule="evenodd"
                   d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z"
@@ -157,13 +144,9 @@ const Dashboard = ({ setCurrentPage, setIsAuthenticated }) => {
             <span className="text-sm font-medium">My Transactions</span>
           </button>
 
-          <button className="flex-1 flex flex-col items-center p-4 bg-pink-500 text-white rounded-xl">
-            <div className="w-10 h-10 bg-white bg-opacity-20 rounded-lg flex items-center justify-center mb-2">
-              <svg
-                className="w-5 h-5 text-pink-500"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
+          <button className="flex-1 flex flex-col items-center p-4 bg-orange-500 text-white rounded-xl">
+            <div className="w-10 h-10 bg-slate-700 text-orange-400 rounded-lg flex items-center justify-center mb-2">
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                 <path
                   fillRule="evenodd"
                   d="M16.707 10.293a1 1 0 010 1.414l-6 6a1 1 0 01-1.414 0l-6-6a1 1 0 111.414-1.414L9 14.586V3a1 1 0 012 0v11.586l4.293-4.293a1 1 0 011.414 0z"
@@ -177,42 +160,42 @@ const Dashboard = ({ setCurrentPage, setIsAuthenticated }) => {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 gap-4">
-          <div className="bg-white rounded-xl p-4 shadow-sm">
-            <p className="text-gray-600 text-sm mb-1">Earnings</p>
-            <p className="text-2xl font-bold text-green-500">
+          <div className="bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-700">
+            <p className="text-gray-300 text-sm mb-1">Earnings</p>
+            <p className="text-2xl font-bold text-green-400">
               {loading ? "..." : `$${dashboardData.earnings.toFixed(2)}`}
             </p>
           </div>
 
-          <div className="bg-white rounded-xl p-4 shadow-sm">
-            <p className="text-gray-600 text-sm mb-1">Active Deposit</p>
-            <p className="text-2xl font-bold text-gray-900">
+          <div className="bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-700">
+            <p className="text-gray-300 text-sm mb-1">Active Deposit</p>
+            <p className="text-2xl font-bold text-white">
               {loading ? "..." : `$${dashboardData.activeDeposit.toFixed(2)}`}
             </p>
           </div>
 
-          <div className="bg-white rounded-xl p-4 shadow-sm">
-            <p className="text-gray-600 text-sm mb-1">Total Deposit</p>
-            <p className="text-2xl font-bold text-gray-900">
+          <div className="bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-700">
+            <p className="text-gray-300 text-sm mb-1">Total Deposit</p>
+            <p className="text-2xl font-bold text-white">
               {loading ? "..." : `$${dashboardData.totalDeposit.toFixed(2)}`}
             </p>
           </div>
 
-          <div className="bg-white rounded-xl p-4 shadow-sm">
-            <p className="text-gray-600 text-sm mb-1">Total Withdraws</p>
-            <p className="text-2xl font-bold text-pink-500">
+          <div className="bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-700">
+            <p className="text-gray-300 text-sm mb-1">Total Withdraws</p>
+            <p className="text-2xl font-bold text-pink-400">
               {loading ? "..." : `$${dashboardData.totalWithdraws.toFixed(2)}`}
             </p>
           </div>
         </div>
 
         {/* Referral Section */}
-        <div className="bg-white rounded-xl p-4 shadow-sm">
+        <div className="bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-700">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-600 text-sm">Referral Link</p>
-              <p className="text-gray-900 text-sm font-medium">
-                https://GreyStartTrust Fund-energy.com/?ref=tobi
+              <p className="text-gray-300 text-sm">Referral Link</p>
+              <p className="text-white text-sm font-medium">
+                https://greystartrustfund.com/?ref=tobi
               </p>
             </div>
             <button
@@ -227,31 +210,29 @@ const Dashboard = ({ setCurrentPage, setIsAuthenticated }) => {
         {/* Start Earning Now Section */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-gray-900">
-              Start Earning Now
-            </h2>
+            <h2 className="text-xl font-bold text-white">Start Earning Now</h2>
             <button className="text-purple-600 text-sm font-medium">
               View All
             </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-white rounded-xl p-6 shadow-sm">
-              <h3 className="text-lg font-bold text-gray-900 mb-2">
+            <div className="bg-slate-800 rounded-xl p-6 shadow-sm border border-slate-700">
+              <h3 className="text-lg font-bold text-white mb-2">
                 Track Progress
               </h3>
-              <p className="text-gray-600 text-sm mb-4">
+              <p className="text-gray-300 text-sm mb-4">
                 Click "Transaction" to see your daily profits, interest will be
                 added to your account balance in accordance with the chosen
                 invest plan.
               </p>
             </div>
 
-            <div className="bg-white rounded-xl p-6 shadow-sm">
-              <h3 className="text-lg font-bold text-gray-900 mb-2">
+            <div className="bg-slate-800 rounded-xl p-6 shadow-sm border border-slate-700">
+              <h3 className="text-lg font-bold text-white mb-2">
                 Career Opportunity
               </h3>
-              <p className="text-gray-600 text-sm mb-4">
+              <p className="text-gray-300 text-sm mb-4">
                 You can earn up to $500+ weekly just by sharing your referral
                 link daily. Form an investment portfolio with a stable income.
               </p>
@@ -262,7 +243,7 @@ const Dashboard = ({ setCurrentPage, setIsAuthenticated }) => {
         {/* My Live Trades Section */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-gray-900">My Live Trades</h2>
+            <h2 className="text-xl font-bold text-white">My Live Trades</h2>
             <button className="text-purple-600 text-sm font-medium">
               View All
             </button>
@@ -276,9 +257,9 @@ const Dashboard = ({ setCurrentPage, setIsAuthenticated }) => {
       </div>
 
       {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-2">
+      <div className="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-700 px-4 py-2">
         <div className="flex justify-around">
-          <button className="flex flex-col items-center p-2 text-purple-600">
+          <button className="flex flex-col items-center p-2 text-red-400">
             <svg
               className="w-6 h-6 mb-1"
               fill="currentColor"

@@ -54,9 +54,9 @@ const Transactions = ({ setCurrentPage, setIsAuthenticated }) => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-900 text-white">
       {/* Header */}
-      <header className="bg-black text-white px-4 py-3 flex items-center justify-between">
+      <header className="bg-slate-900 text-white px-4 py-3 flex items-center justify-between border-b border-slate-700">
         <button className="p-2">
           <svg
             className="w-6 h-6"
@@ -75,7 +75,9 @@ const Transactions = ({ setCurrentPage, setIsAuthenticated }) => {
 
         <div className="flex items-center space-x-2">
           <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-          <span className="text-sm font-medium">GreyStartTrust Fund</span>
+          <span className="text-sm font-medium font-rubik">
+            GREYSTAR TRUST FUND COMPANY
+          </span>
         </div>
 
         <button onClick={handleLogout} className="p-2">
@@ -98,17 +100,17 @@ const Transactions = ({ setCurrentPage, setIsAuthenticated }) => {
       {/* Main Content */}
       <div className="px-4 py-6">
         {/* History Title */}
-        <h1 className="text-xl font-bold text-gray-900 mb-6">History</h1>
+        <h1 className="text-xl font-bold text-white mb-6">History</h1>
 
         {/* Filter Section */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div className="bg-slate-800 rounded-lg shadow-sm p-6 mb-6 border border-slate-700 text-white">
           {/* Transaction Type and eCurrency Filters */}
           <div className="space-y-4 mb-6">
             <div>
               <select
                 value={transactionType}
                 onChange={(e) => setTransactionType(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full px-4 py-3 border border-slate-600 rounded-lg bg-slate-700 text-white focus:outline-none focus:ring-2 focus:ring-red-500"
               >
                 <option>All transactions</option>
                 <option>Deposits</option>
@@ -121,7 +123,7 @@ const Transactions = ({ setCurrentPage, setIsAuthenticated }) => {
               <select
                 value={eCurrencyType}
                 onChange={(e) => setECurrencyType(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full px-4 py-3 border border-slate-600 rounded-lg bg-slate-700 text-white focus:outline-none focus:ring-2 focus:ring-red-500"
               >
                 <option>All eCurrencies</option>
                 <option>USD</option>
@@ -135,14 +137,14 @@ const Transactions = ({ setCurrentPage, setIsAuthenticated }) => {
           <div className="space-y-4">
             {/* From Date */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 From:
               </label>
               <div className="flex space-x-2">
                 <select
                   value={fromMonth}
                   onChange={(e) => setFromMonth(e.target.value)}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="flex-1 px-3 py-2 border border-slate-600 rounded-lg bg-slate-700 text-white focus:outline-none focus:ring-2 focus:ring-red-500"
                 >
                   <option value="Jan">Jan</option>
                   <option value="Feb">Feb</option>
@@ -161,7 +163,7 @@ const Transactions = ({ setCurrentPage, setIsAuthenticated }) => {
                 <select
                   value={fromDay}
                   onChange={(e) => setFromDay(e.target.value)}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="flex-1 px-3 py-2 border border-slate-600 rounded-lg bg-slate-700 text-white focus:outline-none focus:ring-2 focus:ring-red-500"
                 >
                   {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
                     <option key={day} value={day}>
@@ -173,7 +175,7 @@ const Transactions = ({ setCurrentPage, setIsAuthenticated }) => {
                 <select
                   value={fromYear}
                   onChange={(e) => setFromYear(e.target.value)}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="flex-1 px-3 py-2 border border-slate-600 rounded-lg bg-slate-700 text-white focus:outline-none focus:ring-2 focus:ring-red-500"
                 >
                   <option value="2024">2024</option>
                   <option value="2025">2025</option>
@@ -183,14 +185,14 @@ const Transactions = ({ setCurrentPage, setIsAuthenticated }) => {
 
             {/* To Date */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 To:
               </label>
               <div className="flex space-x-2">
                 <select
                   value={toMonth}
                   onChange={(e) => setToMonth(e.target.value)}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="flex-1 px-3 py-2 border border-slate-600 rounded-lg bg-slate-700 text-white focus:outline-none focus:ring-2 focus:ring-red-500"
                 >
                   <option value="Jan">Jan</option>
                   <option value="Feb">Feb</option>
@@ -209,7 +211,7 @@ const Transactions = ({ setCurrentPage, setIsAuthenticated }) => {
                 <select
                   value={toDay}
                   onChange={(e) => setToDay(e.target.value)}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="flex-1 px-3 py-2 border border-slate-600 rounded-lg bg-slate-700 text-white focus:outline-none focus:ring-2 focus:ring-red-500"
                 >
                   {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
                     <option key={day} value={day}>
@@ -221,7 +223,7 @@ const Transactions = ({ setCurrentPage, setIsAuthenticated }) => {
                 <select
                   value={toYear}
                   onChange={(e) => setToYear(e.target.value)}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="flex-1 px-3 py-2 border border-slate-600 rounded-lg bg-slate-700 text-white focus:outline-none focus:ring-2 focus:ring-red-500"
                 >
                   <option value="2024">2024</option>
                   <option value="2025">2025</option>
@@ -234,7 +236,7 @@ const Transactions = ({ setCurrentPage, setIsAuthenticated }) => {
           <div className="mt-6">
             <button
               onClick={handleGoFilter}
-              className="w-full bg-purple-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-purple-700 transition-colors"
+              className="w-full bg-red-500 text-white py-3 px-6 rounded-lg font-medium hover:bg-red-600 transition-colors"
             >
               Go
             </button>
@@ -242,20 +244,20 @@ const Transactions = ({ setCurrentPage, setIsAuthenticated }) => {
         </div>
 
         {/* Transaction History Section */}
-        <div className="bg-white rounded-lg shadow-sm">
+        <div className="bg-slate-800 rounded-lg shadow-sm border border-slate-700">
           {/* History Header */}
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">History</h2>
+          <div className="px-6 py-4 border-b border-slate-700">
+            <h2 className="text-lg font-semibold text-white">History</h2>
           </div>
 
           {/* Table Header */}
-          <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+          <div className="px-6 py-4 bg-slate-700 border-b border-slate-700">
             <div className="grid grid-cols-3 gap-4">
-              <div className="text-sm font-medium text-gray-700">Type</div>
-              <div className="text-sm font-medium text-gray-700 text-right">
+              <div className="text-sm font-medium text-gray-300">Type</div>
+              <div className="text-sm font-medium text-gray-300 text-right">
                 Amount
               </div>
-              <div className="text-sm font-medium text-gray-700 text-right">
+              <div className="text-sm font-medium text-gray-300 text-right">
                 Date
               </div>
             </div>
@@ -265,19 +267,19 @@ const Transactions = ({ setCurrentPage, setIsAuthenticated }) => {
           <div>
             {loading && (
               <div className="px-6 py-12 text-center">
-                <p className="text-gray-500">Loading transactions...</p>
+                <p className="text-gray-400">Loading transactions...</p>
               </div>
             )}
 
             {error && (
               <div className="px-6 py-12 text-center">
-                <p className="text-red-500">{error}</p>
+                <p className="text-red-400">{error}</p>
               </div>
             )}
 
             {!loading && !error && transactions.length === 0 && (
               <div className="px-6 py-12 text-center">
-                <p className="text-gray-500">No transactions found</p>
+                <p className="text-gray-400">No transactions found</p>
               </div>
             )}
 
@@ -286,16 +288,16 @@ const Transactions = ({ setCurrentPage, setIsAuthenticated }) => {
                 {transactions.map((transaction, index) => (
                   <div
                     key={transaction.id || index}
-                    className="px-6 py-4 border-b border-gray-100 hover:bg-gray-50"
+                    className="px-6 py-4 border-b border-slate-700 hover:bg-slate-700"
                   >
                     <div className="grid grid-cols-3 gap-4 items-center">
-                      <div className="text-sm text-gray-900 capitalize">
+                      <div className="text-sm text-gray-300 capitalize">
                         {transaction.type}
                       </div>
-                      <div className="text-sm text-gray-900 text-right">
+                      <div className="text-sm text-white text-right">
                         ${transaction.amount?.toFixed(2) || "0.00"}
                       </div>
-                      <div className="text-sm text-gray-900 text-right">
+                      <div className="text-sm text-gray-300 text-right">
                         {transaction.date
                           ? new Date(transaction.date).toLocaleDateString()
                           : "N/A"}
@@ -310,20 +312,18 @@ const Transactions = ({ setCurrentPage, setIsAuthenticated }) => {
 
         {/* Pagination */}
         <div className="flex items-center justify-center mt-6 space-x-2">
-          <button className="px-3 py-2 text-gray-400 hover:text-gray-600">
+          <button className="px-3 py-2 text-gray-300 hover:text-white">
             &laquo;
           </button>
-          <button className="px-3 py-2 bg-purple-600 text-white rounded">
-            1
-          </button>
-          <button className="px-3 py-2 text-gray-400 hover:text-gray-600">
+          <button className="px-3 py-2 bg-red-500 text-white rounded">1</button>
+          <button className="px-3 py-2 text-gray-300 hover:text-white">
             &raquo;
           </button>
         </div>
 
         {/* Language Selector */}
         <div className="mt-8">
-          <select className="px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500">
+          <select className="px-4 py-2 border border-slate-600 rounded-lg bg-slate-700 text-white focus:outline-none focus:ring-2 focus:ring-red-500">
             <option>Select Language</option>
             <option>English</option>
             <option>Spanish</option>
@@ -333,8 +333,8 @@ const Transactions = ({ setCurrentPage, setIsAuthenticated }) => {
 
         {/* Footer Text */}
         <div className="mt-8 text-center">
-          <p className="text-sm text-gray-600">
-            Copyright © GreyStartTrust Fund-energy.com 2024. All Rights
+          <p className="text-sm text-gray-400">
+            Copyright © GREYSTARTRUSTFUNDCOMPANYtrustfund.com 2024. All Rights
             Reserved.
           </p>
         </div>
@@ -344,11 +344,11 @@ const Transactions = ({ setCurrentPage, setIsAuthenticated }) => {
       </div>
 
       {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-2">
+      <div className="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-700 px-4 py-2">
         <div className="flex justify-around">
           <button
             onClick={() => setCurrentPage("dashboard")}
-            className="flex flex-col items-center p-2 text-gray-400"
+            className="flex flex-col items-center p-2 text-gray-300"
           >
             <svg
               className="w-6 h-6 mb-1"
@@ -360,7 +360,7 @@ const Transactions = ({ setCurrentPage, setIsAuthenticated }) => {
             <span className="text-xs">Dashboard</span>
           </button>
 
-          <button className="flex flex-col items-center p-2 text-purple-600">
+          <button className="flex flex-col items-center p-2 text-red-400">
             <svg
               className="w-6 h-6 mb-1"
               fill="currentColor"
@@ -371,7 +371,7 @@ const Transactions = ({ setCurrentPage, setIsAuthenticated }) => {
             <span className="text-xs">Transactions</span>
           </button>
 
-          <button className="flex flex-col items-center p-2 text-gray-400">
+          <button className="flex flex-col items-center p-2 text-gray-300">
             <svg
               className="w-6 h-6 mb-1"
               fill="currentColor"
@@ -386,7 +386,7 @@ const Transactions = ({ setCurrentPage, setIsAuthenticated }) => {
             <span className="text-xs">Plans</span>
           </button>
 
-          <button className="flex flex-col items-center p-2 text-gray-400">
+          <button className="flex flex-col items-center p-2 text-gray-300">
             <svg
               className="w-6 h-6 mb-1"
               fill="currentColor"

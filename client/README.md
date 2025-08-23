@@ -1,6 +1,6 @@
-# GreyStartTrust Fund Energy Company Website
+# GREYSTAR TRUST FUND Energy Company Website
 
-A modern, responsive React website for GreyStartTrust Fund Energy, built with Vite and Tailwind CSS. This project recreates the design and functionality of the original GreyStartTrust Fund Energy website with clean, maintainable code and modern web technologies.
+A modern, responsive React website for GREYSTAR TRUST FUND Energy, built with Vite and Tailwind CSS. This project recreates the design and functionality of the original GREYSTAR TRUST FUND Energy website with clean, maintainable code and modern web technologies.
 
 ## Features
 
@@ -191,4 +191,4 @@ For questions or issues, please refer to the documentation or create an issue in
 
 ---
 
-**Note**: This project was created as a modern recreation of the GreyStartTrust Fund Energy website using React, Vite, and Tailwind CSS. It demonstrates best practices in modern web development while maintaining the original design intent.
+**Note**: This project was created as a modern recreation of the GREYSTAR TRUST FUND Energy website using React, Vite, and Tailwind CSS. It demonstrates best practices in modern web development while maintaining the original design intent.
