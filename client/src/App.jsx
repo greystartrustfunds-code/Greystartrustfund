@@ -9,15 +9,25 @@ import SignupPage from "./pages/SignupPage";
 import Dashboard from "./pages/Dashboard";
 import Transactions from "./pages/Transactions";
 import Plans from "./pages/Plans";
+import AdminLogin from "./pages/AdminLogin";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminUsers from "./pages/AdminUsers";
+import AdminTransactions from "./pages/AdminTransactions";
 import Footer from "./components/Footer";
 
 function App() {
   const [currentPage, setCurrentPage] = useState("home");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    if (token) {
+    const adminToken = localStorage.getItem('adminToken');
+    
+    if (adminToken) {
+      setIsAdminAuthenticated(true);
+      setCurrentPage("admin-dashboard");
+    } else if (token) {
       setIsAuthenticated(true);
       setCurrentPage("dashboard");
     }
@@ -41,6 +51,14 @@ function App() {
         return <Transactions setCurrentPage={setCurrentPage} setIsAuthenticated={setIsAuthenticated} />;
       case "plans":
         return <Plans setCurrentPage={setCurrentPage} setIsAuthenticated={setIsAuthenticated} />;
+      case "admin-login":
+        return <AdminLogin setCurrentPage={setCurrentPage} setIsAdminAuthenticated={setIsAdminAuthenticated} />;
+      case "admin-dashboard":
+        return <AdminDashboard setCurrentPage={setCurrentPage} setIsAdminAuthenticated={setIsAdminAuthenticated} />;
+      case "admin-users":
+        return <AdminUsers setCurrentPage={setCurrentPage} setIsAdminAuthenticated={setIsAdminAuthenticated} />;
+      case "admin-transactions":
+        return <AdminTransactions setCurrentPage={setCurrentPage} setIsAdminAuthenticated={setIsAdminAuthenticated} />;
       default:
         return <Homepage />;
     }
@@ -48,11 +66,11 @@ function App() {
 
   return (
     <div className="min-h-screen bg-white">
-      {currentPage !== "dashboard" && currentPage !== "transactions" && currentPage !== "plans" && (
+      {!currentPage.startsWith("admin") && currentPage !== "dashboard" && currentPage !== "transactions" && currentPage !== "plans" && (
         <Header currentPage={currentPage} setCurrentPage={setCurrentPage} isAuthenticated={isAuthenticated} />
       )}
       {renderPage()}
-      {currentPage !== "dashboard" && currentPage !== "transactions" && currentPage !== "plans" && <Footer />}
+      {!currentPage.startsWith("admin") && currentPage !== "dashboard" && currentPage !== "transactions" && currentPage !== "plans" && <Footer />}
     </div>
   );
 }

@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import connectDB from "./config/database.js";
 import authRoutes from "./routes/auth.js";
 import contactRoutes from "./routes/contact.js";
+import adminRoutes from "./routes/admin.js";
 
 dotenv.config();
 
@@ -38,6 +39,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use("/api/auth", authRoutes);
 app.use("/api/contact", contactRoutes);
+app.use("/api/admin", adminRoutes);
 
 app.get("/", (req, res) => {
   res.json({ message: "GREYSTAR TRUST FUND API Server" });
