@@ -1,6 +1,11 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+// Use Vite environment variable for production API host. Falls back to '/api' for local dev proxy.
+// If VITE_API_BASE_URL is provided, normalize it to ensure it ends with '/api'.
+const rawApiBase = import.meta.env.VITE_API_BASE_URL;
+const API_BASE_URL = rawApiBase
+  ? rawApiBase.replace(/\/+$/, '') + '/api'
+  : '/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
