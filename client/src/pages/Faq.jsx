@@ -76,7 +76,7 @@ const Faq = () => {
     {
       question: "How does the platform generate profit?",
       answer:
-        "GREYSTAR TRUST FUND-ENERGY COMPANY generates profit by trading in the Top 10 cryptocurrencies. Its AI trading bot generates profit via arbitrage trading.",
+        "GREYSTAR TRUST FUND COMPANY generates profit by trading in the Top 10 cryptocurrencies. Its AI trading bot generates profit via arbitrage trading.",
     },
   ];
 
@@ -90,7 +90,7 @@ const Faq = () => {
           </h1>
           <p className="text-gray-400 max-w-3xl mx-auto leading-relaxed">
             Here we have provided some relevant information regarding the
-            functionality of GREYSTAR TRUST FUND-ENERGY COMPANY. If you have any
+            functionality of GREYSTAR TRUST FUND COMPANY. If you have any
             other questions, please get in touch using our contact details.
           </p>
         </div>

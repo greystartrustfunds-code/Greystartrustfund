@@ -33,7 +33,7 @@ const AboutUs = () => {
             </div>
             <div>
               <p className="text-gray-600 text-lg leading-relaxed">
-                GreyStar COMPANY is a successful online trading and investment
+                GREYSTAR TRUST FUND COMPANY is a successful online trading and investment
                 platform for brokers interested in Foreign Exchange, Stock
                 Market Trading, and Cryptocurrency Trading. We give our users
                 the potential to generate financial returns on both rising and
@@ -193,7 +193,7 @@ const AboutUs = () => {
             </div>
             <div className="flex-1">
               <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-6">
-                Why trade with GreyStar COMPANY
+                Why trade with GREYSTAR TRUST FUND COMPANY
               </h2>
               <p className="text-gray-600 text-lg max-w-4xl">
                 The best rated ASIC broker in the industry Dedicated account
@@ -382,7 +382,7 @@ const AboutUs = () => {
       <section className="bg-white py-20 px-4">
         <div className="max-w-7xl mx-auto">
           <h2 className="text-4xl md:text-5xl font-bold text-gray-800 text-center mb-16">
-            GreyStar COMPANY Legal Docs
+            GREYSTAR TRUST FUND COMPANY Legal Docs
           </h2>
 
           <div className="grid md:grid-cols-3 gap-8">
@@ -465,7 +465,7 @@ const AboutUs = () => {
                 Certificate of Trade
               </h3>
               <p className="text-gray-600 mb-6">
-                GreyStar COMPANY is certified by the International Business
+                GREYSTAR TRUST FUND COMPANY is certified by the International Business
                 Companies of the United States and the United Kingdom
               </p>
               <a

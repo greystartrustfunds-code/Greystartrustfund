@@ -137,13 +137,13 @@ const AdminDashboard = ({ setCurrentPage, setIsAdminAuthenticated }) => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
       {/* Header */}
-      <header className="bg-slate-800/90 backdrop-blur-sm border-b border-slate-700/50 px-6 py-4 shadow-lg">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-3">
-              <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-r from-red-500 to-pink-600 rounded-full shadow-lg">
+      <header className="bg-slate-800/90 backdrop-blur-sm border-b border-slate-700/50 px-4 py-4 shadow-lg">
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center space-x-2 md:space-x-4">
+            <div className="flex items-center space-x-2 md:space-x-3">
+              <div className="flex items-center justify-center w-8 h-8 md:w-10 md:h-10 bg-gradient-to-r from-red-500 to-pink-600 rounded-full shadow-lg">
                 <svg
-                  className="w-6 h-6 text-white"
+                  className="w-4 h-4 md:w-6 md:h-6 text-white"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -156,55 +156,57 @@ const AdminDashboard = ({ setCurrentPage, setIsAdminAuthenticated }) => {
                   />
                 </svg>
               </div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+              <h1 className="text-lg md:text-2xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
                 GreyStar Admin
               </h1>
             </div>
-            <nav className="flex space-x-1 ml-8 bg-slate-700/50 rounded-lg p-1">
+            
+            {/* Desktop Navigation */}
+            <nav className="hidden lg:flex space-x-1 ml-8 bg-slate-700/50 rounded-lg p-1">
               <button
                 onClick={() => navigateToPage("admin-dashboard")}
-                className="px-4 py-2 rounded-md bg-red-500/80 text-white font-medium shadow-sm transition-all"
+                className="px-4 py-2 rounded-md bg-red-500/80 text-white font-medium shadow-sm transition-all text-sm"
               >
                 Dashboard
               </button>
               <button
                 onClick={() => navigateToPage("admin-users")}
-                className="px-4 py-2 rounded-md text-gray-300 hover:text-white hover:bg-slate-600/50 transition-all"
+                className="px-4 py-2 rounded-md text-gray-300 hover:text-white hover:bg-slate-600/50 transition-all text-sm"
               >
                 Users
               </button>
               <button
                 onClick={() => navigateToPage("admin-transactions")}
-                className="px-4 py-2 rounded-md text-gray-300 hover:text-white hover:bg-slate-600/50 transition-all"
+                className="px-4 py-2 rounded-md text-gray-300 hover:text-white hover:bg-slate-600/50 transition-all text-sm"
               >
                 Transactions
               </button>
               <button
                 onClick={() => navigateToPage("admin-chats")}
-                className="px-4 py-2 rounded-md text-gray-300 hover:text-white hover:bg-slate-600/50 transition-all"
+                className="px-4 py-2 rounded-md text-gray-300 hover:text-white hover:bg-slate-600/50 transition-all text-sm"
               >
                 Chats
               </button>
             </nav>
           </div>
 
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-3 bg-slate-700/30 px-4 py-2 rounded-lg">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                <span className="text-white font-semibold text-sm">
+          <div className="flex items-center space-x-2 md:space-x-4">
+            <div className="hidden sm:flex items-center space-x-2 md:space-x-3 bg-slate-700/30 px-3 py-2 rounded-lg">
+              <div className="w-6 h-6 md:w-8 md:h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                <span className="text-white font-semibold text-xs md:text-sm">
                   {adminUser?.username?.charAt(0).toUpperCase()}
                 </span>
               </div>
-              <span className="text-gray-300 font-medium">
+              <span className="text-gray-300 font-medium text-sm md:text-base hidden md:block">
                 Welcome, {adminUser?.username}
               </span>
             </div>
             <button
               onClick={handleLogout}
-              className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 px-4 py-2 rounded-lg text-sm font-medium shadow-lg transition-all transform hover:scale-105 flex items-center space-x-2"
+              className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 px-3 py-2 md:px-4 md:py-2 rounded-lg text-xs md:text-sm font-medium shadow-lg transition-all transform hover:scale-105 flex items-center space-x-1 md:space-x-2"
             >
               <svg
-                className="w-4 h-4"
+                className="w-3 h-3 md:w-4 md:h-4"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -216,10 +218,38 @@ const AdminDashboard = ({ setCurrentPage, setIsAdminAuthenticated }) => {
                   d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
                 />
               </svg>
-              <span>Logout</span>
+              <span className="hidden sm:block">Logout</span>
             </button>
           </div>
         </div>
+
+        {/* Mobile Navigation */}
+        <nav className="lg:hidden mt-4 flex space-x-1 bg-slate-700/50 rounded-lg p-1 overflow-x-auto">
+          <button
+            onClick={() => navigateToPage("admin-dashboard")}
+            className="px-3 py-2 rounded-md bg-red-500/80 text-white font-medium shadow-sm transition-all text-xs whitespace-nowrap"
+          >
+            Dashboard
+          </button>
+          <button
+            onClick={() => navigateToPage("admin-users")}
+            className="px-3 py-2 rounded-md text-gray-300 hover:text-white hover:bg-slate-600/50 transition-all text-xs whitespace-nowrap"
+          >
+            Users
+          </button>
+          <button
+            onClick={() => navigateToPage("admin-transactions")}
+            className="px-3 py-2 rounded-md text-gray-300 hover:text-white hover:bg-slate-600/50 transition-all text-xs whitespace-nowrap"
+          >
+            Transactions
+          </button>
+          <button
+            onClick={() => navigateToPage("admin-chats")}
+            className="px-3 py-2 rounded-md text-gray-300 hover:text-white hover:bg-slate-600/50 transition-all text-xs whitespace-nowrap"
+          >
+            Chats
+          </button>
+        </nav>
       </header>
 
       {/* Main Content */}

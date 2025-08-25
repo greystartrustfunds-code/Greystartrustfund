@@ -318,7 +318,7 @@ const Dashboard = ({ setCurrentPage, setIsAuthenticated }) => {
 
         <div className="flex items-center space-x-2">
           <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-          <span className="text-sm font-medium font-rubik">GreyStar</span>
+          <span className="text-sm font-medium font-rubik">GREYSTAR TRUST FUND</span>
         </div>
 
         <button onClick={handleLogout} className="p-2">
@@ -455,7 +455,7 @@ const Dashboard = ({ setCurrentPage, setIsAuthenticated }) => {
             <div>
               <p className="text-gray-300 text-sm">Referral Link</p>
               <p className="text-white text-sm font-medium">
-                https://greystartrustfund.com/?ref=tobi
+                https://greystartrustfund.com/?ref=myname
               </p>
             </div>
             <button

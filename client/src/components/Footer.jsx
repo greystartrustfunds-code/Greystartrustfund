@@ -92,11 +92,11 @@ const Footer = () => {
                   <div className="w-8 h-8 bg-orange-400 rounded mr-2 flex items-center justify-center">
                     <span className="text-slate-900 font-bold text-sm">B</span>
                   </div>
-                  GreyStar
+                  GREYSTAR TRUST FUND
                 </div>
                 <p className="mt-4 text-gray-400 leading-relaxed">
                   Founded and managed by leading industry professionals,
-                  GreyStar was established with a clear vision: To provide
+                  GREYSTAR TRUST FUND was established with a clear vision: To provide
                   unrivaled trading solutions to investors from all over the
                   world with a stellar client centered culture.
                 </p>
@@ -154,9 +154,9 @@ const Footer = () => {
         <div className="border-t border-slate-700 py-8">
           <div className="text-center mb-8">
             <p className="text-gray-400 max-w-4xl mx-auto leading-relaxed">
-              GreyStar is an online Forex and cryptocurrency STP broker
+              GREYSTAR TRUST FUND is an online Forex and cryptocurrency STP broker
               providing CFD trading on hundreds of assets and optimal trading
-              conditions within the award-winning MT4 platform. GreyStar offers
+              conditions within the award-winning MT4 platform. GREYSTAR TRUST FUND offers
               deep liquidity, generous leverage up to 1:500, and some of the
               best spreads in the industry. As part of our commitment to our
               client's satisfaction, we offer 24/7 live customer service, charge
@@ -181,10 +181,10 @@ const Footer = () => {
         <div className="border-t border-slate-700 py-8">
           <div className="text-center text-gray-400 text-sm">
             <p className="mb-4">
-              This GreyStar can be accessed worldwide however the information on
-              the website is related to GreyStar and is not specific to another
-              entity of GreyStar. All clients will directly engage with GreyStar
-              A/S and all client agreements will be entered into with GreyStar
+              This GREYSTAR TRUST FUND can be accessed worldwide however the information on
+              the website is related to GREYSTAR TRUST FUND and is not specific to another
+              entity of GREYSTAR TRUST FUND. All clients will directly engage with GREYSTAR TRUST FUND
+              A/S and all client agreements will be entered into with GREYSTAR TRUST FUND
               A/S and thus governed by UK Law.
             </p>
             <p className="mb-4">
@@ -200,7 +200,7 @@ const Footer = () => {
         <div className="border-t border-slate-700 py-6">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <div className="text-gray-400 text-sm">
-              © 2024 GreyStar. All rights reserved.
+              © 2025 GREYSTAR TRUST FUND. All rights reserved.
             </div>
             <div className="flex space-x-6 text-sm">
               <a

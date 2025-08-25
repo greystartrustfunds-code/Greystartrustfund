@@ -23,7 +23,7 @@ const MarketAnalysis = () => {
 
             {/* Description */}
             <p className="text-gray-600 mb-8 leading-relaxed text-lg">
-              With a thriving network of experts, being a client of GreyStar opens doors to many opportunities. Powerful market insight and the top trade setups in the industry. You will have extensive connections to professional investors.
+              With a thriving network of experts, being a client of GREYSTAR TRUST FUND opens doors to many opportunities. Powerful market insight and the top trade setups in the industry. You will have extensive connections to professional investors.
             </p>
 
             {/* Feature Boxes */}

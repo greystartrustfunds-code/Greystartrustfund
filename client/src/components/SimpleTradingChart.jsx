@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 
 const SimpleTradingChart = () => {
   const [currentPrice, setCurrentPrice] = useState(117863.95);
-  const [priceChange, setPriceChange] = useState(58366.46);
-  const [percentChange, setPercentChange] = useState(98.10);
-  const [selectedTimeframe, setSelectedTimeframe] = useState('1Y');
+  const [priceChange] = useState(58366.46);
+  const [percentChange] = useState(98.1);
+  const [selectedTimeframe, setSelectedTimeframe] = useState("1Y");
   const [chartData, setChartData] = useState([]);
 
   useEffect(() => {
@@ -13,8 +13,7 @@ const SimpleTradingChart = () => {
       const points = [];
       const numPoints = 50;
       const width = 100;
-      const height = 60;
-      
+
       for (let i = 0; i < numPoints; i++) {
         const x = (i / (numPoints - 1)) * width;
         // Create a realistic Bitcoin-like chart pattern
@@ -32,7 +31,7 @@ const SimpleTradingChart = () => {
     // Simulate price updates
     const interval = setInterval(() => {
       const change = (Math.random() - 0.5) * 2000;
-      setCurrentPrice(prev => Math.max(20000, prev + change));
+      setCurrentPrice((prev) => Math.max(20000, prev + change));
       setChartData(generateChartData()); // Regenerate chart
     }, 5000);
 
@@ -40,8 +39,8 @@ const SimpleTradingChart = () => {
   }, []);
 
   const createPath = () => {
-    if (chartData.length === 0) return '';
-    
+    if (chartData.length === 0) return "";
+
     let path = `M ${chartData[0].x} ${chartData[0].y}`;
     for (let i = 1; i < chartData.length; i++) {
       path += ` L ${chartData[i].x} ${chartData[i].y}`;
@@ -50,8 +49,8 @@ const SimpleTradingChart = () => {
   };
 
   const createArea = () => {
-    if (chartData.length === 0) return '';
-    
+    if (chartData.length === 0) return "";
+
     let path = `M ${chartData[0].x} ${chartData[0].y}`;
     for (let i = 1; i < chartData.length; i++) {
       path += ` L ${chartData[i].x} ${chartData[i].y}`;
@@ -60,7 +59,7 @@ const SimpleTradingChart = () => {
     return path;
   };
 
-  const timeframes = ['1D', '1M', '3M', '1Y', '5Y', 'All'];
+  const timeframes = ["1D", "1M", "3M", "1Y", "5Y", "All"];
 
   return (
     <div className="bg-gray-900 rounded-xl overflow-hidden">
@@ -75,19 +74,20 @@ const SimpleTradingChart = () => {
             <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
           </div>
         </div>
-        
+
         <div className="flex items-baseline space-x-3">
           <span className="text-white text-2xl font-bold">
-            {currentPrice.toLocaleString('en-US', {
+            {currentPrice.toLocaleString("en-US", {
               minimumFractionDigits: 2,
-              maximumFractionDigits: 2
+              maximumFractionDigits: 2,
             })}
           </span>
           <span className="text-xs text-gray-400">USD</span>
           <span className="text-green-400 text-sm">
-            +{priceChange.toLocaleString('en-US', {
+            +
+            {priceChange.toLocaleString("en-US", {
               minimumFractionDigits: 2,
-              maximumFractionDigits: 2
+              maximumFractionDigits: 2,
             })}
           </span>
           <span className="text-green-400 text-sm">+{percentChange}%</span>
@@ -104,8 +104,8 @@ const SimpleTradingChart = () => {
               onClick={() => setSelectedTimeframe(timeframe)}
               className={`px-3 py-1 text-sm rounded transition-colors ${
                 selectedTimeframe === timeframe
-                  ? 'bg-gray-600 text-white'
-                  : 'text-gray-400 hover:text-white hover:bg-gray-700'
+                  ? "bg-gray-600 text-white"
+                  : "text-gray-400 hover:text-white hover:bg-gray-700"
               }`}
             >
               {timeframe}
@@ -119,8 +119,18 @@ const SimpleTradingChart = () => {
         {/* Grid lines */}
         <svg className="absolute inset-0 w-full h-full opacity-20">
           <defs>
-            <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-              <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#374151" strokeWidth="0.5"/>
+            <pattern
+              id="grid"
+              width="20"
+              height="20"
+              patternUnits="userSpaceOnUse"
+            >
+              <path
+                d="M 20 0 L 0 0 0 20"
+                fill="none"
+                stroke="#374151"
+                strokeWidth="0.5"
+              />
             </pattern>
           </defs>
           <rect width="100%" height="100%" fill="url(#grid)" />
@@ -128,20 +138,27 @@ const SimpleTradingChart = () => {
 
         {/* Price chart */}
         <div className="absolute inset-4">
-          <svg className="w-full h-full" viewBox="0 0 100 60" preserveAspectRatio="none">
+          <svg
+            className="w-full h-full"
+            viewBox="0 0 100 60"
+            preserveAspectRatio="none"
+          >
             <defs>
-              <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+              <linearGradient
+                id="areaGradient"
+                x1="0%"
+                y1="0%"
+                x2="0%"
+                y2="100%"
+              >
                 <stop offset="0%" stopColor="rgba(67, 147, 252, 0.7)" />
                 <stop offset="100%" stopColor="rgba(67, 147, 252, 0.1)" />
               </linearGradient>
             </defs>
-            
+
             {/* Area fill */}
-            <path
-              d={createArea()}
-              fill="url(#areaGradient)"
-            />
-            
+            <path d={createArea()} fill="url(#areaGradient)" />
+
             {/* Price line */}
             <path
               d={createPath()}
@@ -178,7 +195,7 @@ const SimpleTradingChart = () => {
           <span>Aug</span>
         </div>
       </div>
-      
+
       {/* TradingView Attribution */}
       <div className="px-4 py-2 border-t border-gray-700 flex items-center justify-between">
         <div className="flex items-center space-x-2">
@@ -187,7 +204,7 @@ const SimpleTradingChart = () => {
           </div>
           <span className="text-gray-400 text-xs">Powered by TradingView</span>
         </div>
-        
+
         {/* Language Selector */}
         <select className="bg-gray-800 text-gray-300 text-xs border border-gray-600 rounded px-2 py-1 focus:outline-none focus:border-blue-500">
           <option>English</option>

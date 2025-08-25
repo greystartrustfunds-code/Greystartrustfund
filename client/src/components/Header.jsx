@@ -17,8 +17,8 @@ const Header = ({ currentPage, setCurrentPage }) => {
           {/* Logo */}
           <div className="flex items-center">
             <img
-              src="/src/assets/logo.png"
-              alt="GreyStar"
+              src="../assets/logo.png"
+              alt="GREYSTAR TRUST FUND"
               className="h-8 w-auto"
             />
           </div>
