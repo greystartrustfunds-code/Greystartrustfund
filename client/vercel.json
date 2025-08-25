@@ -1,8 +1,14 @@
 {
   "rewrites": [
     {
-      "source": "/(.*)",
-      "destination": "https://greystartrustfund.onrender.com"
+      "source": "/api/(.*)",
+      "destination": "https://greystartrustfund.onrender.com/api/$1"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
     }
   ]
 }
