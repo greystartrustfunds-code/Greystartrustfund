@@ -33,8 +33,8 @@ if (process.env.NODE_ENV === "production") {
 } else {
   corsOptions = {
     origin: process.env.CORS_ORIGIN_DEV?.split(",") || [
-      "http://localhost:3838",
-      "http://127.0.0.1:3838",
+      "https://greystartrustfund.vercel.app",
+      "https://greystartrustfund.vercel.app",
     ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
