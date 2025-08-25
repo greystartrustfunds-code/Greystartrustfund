@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { userAPI } from "../services/api";
+import DepositModal from "../components/DepositModal";
 
 const plans = [
   {
@@ -54,6 +55,7 @@ const Plans = ({ setCurrentPage, setIsAuthenticated }) => {
   const [depositAmount, setDepositAmount] = useState("25.00");
   const [accountBalance, setAccountBalance] = useState(0);
   const [calculatedProfit, setCalculatedProfit] = useState(0);
+  const [showDepositModal, setShowDepositModal] = useState(false);
 
   // using hoisted `plans` and `walletOptions` defined above
 
@@ -120,14 +122,8 @@ const Plans = ({ setCurrentPage, setIsAuthenticated }) => {
       return;
     }
 
-    try {
-      alert(
-        `Deposit initiated: $${amount} via ${selectedWallet} wallet for ${plan.name}`
-      );
-    } catch (error) {
-      console.error("Error processing deposit:", error);
-      alert("Error processing deposit. Please try again.");
-    }
+    // Show the deposit modal instead of alert
+    setShowDepositModal(true);
   };
 
   return (
@@ -363,7 +359,10 @@ const Plans = ({ setCurrentPage, setIsAuthenticated }) => {
             <span className="text-xs">Plans</span>
           </button>
 
-          <button className="flex flex-col items-center p-2 text-gray-300">
+          <button 
+            onClick={() => setCurrentPage('chat')}
+            className="flex flex-col items-center p-2 text-gray-400"
+          >
             <svg
               className="w-6 h-6 mb-1"
               fill="currentColor"
@@ -393,6 +392,23 @@ const Plans = ({ setCurrentPage, setIsAuthenticated }) => {
         </button>
         <div className="absolute -top-2 -right-2 w-4 h-4 bg-green-400 rounded-full"></div>
       </div>
+
+              {/* Footer Text */}
+        <div className="mt-8 text-center">
+          <p className="text-sm text-gray-400">
+            © {new Date().getFullYear()} GREYSTAR TRUST FUND COMPANY trustfund.com. All Rights Reserved.
+          </p>
+        </div>
+
+      {/* Deposit Modal */}
+      <DepositModal 
+        isOpen={showDepositModal}
+        onClose={() => setShowDepositModal(false)}
+        selectedWallet={selectedWallet}
+        depositAmount={depositAmount}
+        planName={selectedPlan ? plans.find(p => p.id === selectedPlan)?.name : ""}
+        selectedPlan={selectedPlan}
+      />
     </div>
   );
 };

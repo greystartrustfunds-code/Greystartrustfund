@@ -48,17 +48,17 @@ export const authAPI = {
 
 export const transactionAPI = {
   getTransactions: async (filters = {}) => {
-    const response = await api.get('/transactions', { params: filters });
+    const response = await api.get('/user/transactions', { params: filters });
     return response.data;
   },
   
   createTransaction: async (transactionData) => {
-    const response = await api.post('/transactions', transactionData);
+    const response = await api.post('/user/transactions', transactionData);
     return response.data;
   },
   
   getTransactionById: async (id) => {
-    const response = await api.get(`/transactions/${id}`);
+    const response = await api.get(`/user/transactions/${id}`);
     return response.data;
   }
 };
@@ -76,6 +76,43 @@ export const userAPI = {
   
   getBalance: async () => {
     const response = await api.get('/user/balance');
+    return response.data;
+  },
+
+  deposit: async (depositData) => {
+    const response = await api.post('/user/deposit', depositData);
+    return response.data;
+  },
+
+  uploadImage: async (imageData) => {
+    const response = await api.post('/user/upload-image', imageData);
+    return response.data;
+  },
+
+  withdraw: async (withdrawalData) => {
+    const response = await api.post('/user/withdraw', withdrawalData);
+    return response.data;
+  }
+};
+
+export const chatAPI = {
+  getChat: async () => {
+    const response = await api.get('/user/chat');
+    return response.data;
+  },
+
+  sendMessage: async (message) => {
+    const response = await api.post('/user/chat/message', { message });
+    return response.data;
+  },
+
+  markAsRead: async () => {
+    const response = await api.patch('/user/chat/read');
+    return response.data;
+  },
+
+  getUnreadCount: async () => {
+    const response = await api.get('/user/chat/unread-count');
     return response.data;
   }
 };

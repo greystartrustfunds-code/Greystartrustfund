@@ -34,6 +34,25 @@ const userSchema = new mongoose.Schema(
       enum: ["user", "admin"],
       default: "user",
     },
+    balance: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    totalEarnings: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    totalWithdraws: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    phone: {
+      type: String,
+      trim: true,
+    },
   },
   {
     timestamps: true,

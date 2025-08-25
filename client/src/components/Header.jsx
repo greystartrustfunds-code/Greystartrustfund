@@ -43,12 +43,6 @@ const Header = ({ currentPage, setCurrentPage }) => {
           {/* Right Side Buttons */}
           <div className="hidden lg:flex items-center space-x-4">
             <button
-              onClick={() => setCurrentPage("admin-login")}
-              className="text-red-400 hover:text-red-300 font-medium text-xs"
-            >
-              ADMIN
-            </button>
-            <button
               onClick={() => setCurrentPage("signup")}
               className="text-orange-400 hover:text-orange-300 font-medium"
             >
@@ -115,15 +109,6 @@ const Header = ({ currentPage, setCurrentPage }) => {
                 </button>
               ))}
               <div className="pt-4 space-y-2">
-                <button
-                  onClick={() => {
-                    setCurrentPage("admin-login");
-                    setIsMenuOpen(false);
-                  }}
-                  className="w-full text-left text-red-400 hover:text-red-300 font-medium text-xs"
-                >
-                  ADMIN
-                </button>
                 <button
                   onClick={() => {
                     setCurrentPage("signup");

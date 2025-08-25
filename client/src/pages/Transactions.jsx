@@ -27,7 +27,7 @@ const Transactions = ({ setCurrentPage, setIsAuthenticated }) => {
     setError("");
     try {
       const response = await transactionAPI.getTransactions(filters);
-      setTransactions(response.data || []);
+      setTransactions(response.transactions || []);
     } catch (error) {
       setError("Failed to fetch transactions");
       console.error("Error fetching transactions:", error);
@@ -38,13 +38,11 @@ const Transactions = ({ setCurrentPage, setIsAuthenticated }) => {
 
   const handleGoFilter = () => {
     const filters = {
-      type:
-        transactionType === "All transactions"
-          ? undefined
-          : transactionType.toLowerCase(),
-      currency: eCurrencyType === "All eCurrencies" ? undefined : eCurrencyType,
-      fromDate: `${fromYear}-${fromMonth}-${fromDay}`,
-      toDate: `${toYear}-${toMonth}-${toDay}`,
+      type: transactionType === "All transactions" ? undefined : transactionType,
+      // Remove currency filter for now as we don't use it in backend
+      // currency: eCurrencyType === "All eCurrencies" ? undefined : eCurrencyType,
+      // fromDate: `${fromYear}-${fromMonth}-${fromDay}`,
+      // toDate: `${toYear}-${toMonth}-${toDay}`,
     };
     fetchTransactions(filters);
   };
@@ -113,9 +111,11 @@ const Transactions = ({ setCurrentPage, setIsAuthenticated }) => {
                 className="w-full px-4 py-3 border border-slate-600 rounded-lg bg-slate-700 text-white focus:outline-none focus:ring-2 focus:ring-red-500"
               >
                 <option>All transactions</option>
-                <option>Deposits</option>
-                <option>Withdrawals</option>
-                <option>Profits</option>
+                <option>deposit</option>
+                <option>withdrawal</option>
+                <option>investment</option>
+                <option>profit</option>
+                <option>referral_bonus</option>
               </select>
             </div>
 
@@ -252,14 +252,11 @@ const Transactions = ({ setCurrentPage, setIsAuthenticated }) => {
 
           {/* Table Header */}
           <div className="px-6 py-4 bg-slate-700 border-b border-slate-700">
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-4 gap-4">
               <div className="text-sm font-medium text-gray-300">Type</div>
-              <div className="text-sm font-medium text-gray-300 text-right">
-                Amount
-              </div>
-              <div className="text-sm font-medium text-gray-300 text-right">
-                Date
-              </div>
+              <div className="text-sm font-medium text-gray-300">Status</div>
+              <div className="text-sm font-medium text-gray-300 text-right">Amount</div>
+              <div className="text-sm font-medium text-gray-300 text-right">Date</div>
             </div>
           </div>
 
@@ -287,20 +284,58 @@ const Transactions = ({ setCurrentPage, setIsAuthenticated }) => {
               <div>
                 {transactions.map((transaction, index) => (
                   <div
-                    key={transaction.id || index}
-                    className="px-6 py-4 border-b border-slate-700 hover:bg-slate-700"
+                    key={transaction._id || index}
+                    className="px-6 py-4 border-b border-slate-700 hover:bg-slate-700/50 transition-colors"
                   >
-                    <div className="grid grid-cols-3 gap-4 items-center">
-                      <div className="text-sm text-gray-300 capitalize">
-                        {transaction.type}
+                    <div className="grid grid-cols-4 gap-4 items-center">
+                      <div className="flex flex-col">
+                        <span className="text-sm text-white font-medium capitalize">
+                          {transaction.type}
+                        </span>
+                        {transaction.planName && (
+                          <span className="text-xs text-gray-400">
+                            {transaction.planName}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className={`text-xs px-2 py-1 rounded-full font-medium inline-block w-fit ${
+                          transaction.status === 'pending' ? 'bg-yellow-900/30 text-yellow-400' :
+                          transaction.status === 'completed' ? 'bg-green-900/30 text-green-400' :
+                          transaction.status === 'active' ? 'bg-blue-900/30 text-blue-400' :
+                          transaction.status === 'failed' ? 'bg-red-900/30 text-red-400' :
+                          'bg-gray-900/30 text-gray-400'
+                        }`}>
+                          {transaction.status}
+                        </span>
+                        {transaction.paymentMethod && (
+                          <span className="text-xs text-gray-400 uppercase mt-1">
+                            {transaction.paymentMethod}
+                          </span>
+                        )}
                       </div>
                       <div className="text-sm text-white text-right">
-                        ${transaction.amount?.toFixed(2) || "0.00"}
+                        <div>${transaction.amount?.toFixed(2) || "0.00"}</div>
+                        {transaction.expectedProfit && transaction.expectedProfit > 0 && (
+                          <div className="text-xs text-green-400">
+                            +${transaction.expectedProfit.toFixed(2)} profit
+                          </div>
+                        )}
                       </div>
                       <div className="text-sm text-gray-300 text-right">
-                        {transaction.date
-                          ? new Date(transaction.date).toLocaleDateString()
-                          : "N/A"}
+                        <div>
+                          {transaction.createdAt
+                            ? new Date(transaction.createdAt).toLocaleDateString()
+                            : "N/A"}
+                        </div>
+                        <div className="text-xs text-gray-400">
+                          {transaction.createdAt
+                            ? new Date(transaction.createdAt).toLocaleTimeString([], {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })
+                            : ""}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -334,10 +369,10 @@ const Transactions = ({ setCurrentPage, setIsAuthenticated }) => {
         {/* Footer Text */}
         <div className="mt-8 text-center">
           <p className="text-sm text-gray-400">
-            Copyright © GREYSTARTRUSTFUNDCOMPANYtrustfund.com 2024. All Rights
-            Reserved.
+            © {new Date().getFullYear()} GREYSTAR TRUST FUND COMPANY trustfund.com. All Rights Reserved.
           </p>
         </div>
+
 
         {/* Bottom spacing for navigation */}
         <div className="h-20"></div>
@@ -371,7 +406,10 @@ const Transactions = ({ setCurrentPage, setIsAuthenticated }) => {
             <span className="text-xs">Transactions</span>
           </button>
 
-          <button className="flex flex-col items-center p-2 text-gray-300">
+          <button
+            onClick={() => setCurrentPage("plans")}
+            className="flex flex-col items-center p-2 text-gray-400"
+          >
             <svg
               className="w-6 h-6 mb-1"
               fill="currentColor"
@@ -386,7 +424,10 @@ const Transactions = ({ setCurrentPage, setIsAuthenticated }) => {
             <span className="text-xs">Plans</span>
           </button>
 
-          <button className="flex flex-col items-center p-2 text-gray-300">
+          <button 
+            onClick={() => setCurrentPage('chat')}
+            className="flex flex-col items-center p-2 text-gray-400"
+          >
             <svg
               className="w-6 h-6 mb-1"
               fill="currentColor"

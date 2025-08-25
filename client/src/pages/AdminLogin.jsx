@@ -15,6 +15,7 @@ const AdminLogin = ({ setCurrentPage, setIsAdminAuthenticated }) => {
     if (token) {
       setIsAdminAuthenticated(true);
       setCurrentPage('admin-dashboard');
+      window.history.pushState(null, '', '/admin/dashboard');
     }
   }, [setCurrentPage, setIsAdminAuthenticated]);
 
@@ -46,6 +47,7 @@ const AdminLogin = ({ setCurrentPage, setIsAdminAuthenticated }) => {
         localStorage.setItem('adminUser', JSON.stringify(response.admin));
         setIsAdminAuthenticated(true);
         setCurrentPage('admin-dashboard');
+        window.history.pushState(null, '', '/admin/dashboard');
       } else {
         setError(response.message || 'Login failed');
       }
@@ -195,7 +197,10 @@ const AdminLogin = ({ setCurrentPage, setIsAdminAuthenticated }) => {
           <div className="mt-8 text-center">
             <button
               type="button"
-              onClick={() => setCurrentPage('home')}
+              onClick={() => {
+                setCurrentPage('home');
+                window.history.pushState(null, '', '/');
+              }}
               className="inline-flex items-center text-gray-400 hover:text-gray-300 text-sm font-medium transition-colors duration-200"
             >
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
