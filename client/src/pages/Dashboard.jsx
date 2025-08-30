@@ -141,7 +141,7 @@ const Dashboard = ({ setCurrentPage, setIsAuthenticated }) => {
         "image/gif",
         "application/pdf",
       ];
-      const maxSize = 5 * 1024 * 1024; // 5MB
+      const maxSize = 10 * 1024 * 1024; // 10MB
 
       if (!allowedTypes.includes(file.type)) {
         alert("Please upload an image (JPG, PNG, GIF) or PDF file");
@@ -149,7 +149,7 @@ const Dashboard = ({ setCurrentPage, setIsAuthenticated }) => {
       }
 
       if (file.size > maxSize) {
-        alert("File size must be less than 5MB");
+        alert("File size must be less than 10MB");
         return;
       }
 
@@ -1211,7 +1211,7 @@ const Dashboard = ({ setCurrentPage, setIsAuthenticated }) => {
                           payment proof
                         </p>
                         <p className="text-xs text-gray-500">
-                          PNG, JPG, GIF or PDF (MAX. 5MB)
+                          PNG, JPG, GIF or PDF (MAX. 10MB)
                         </p>
                       </div>
                     </label>
