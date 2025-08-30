@@ -77,7 +77,7 @@ const createAdmin = async () => {
         analytics: true,
       },
       isActive: true,
-    };
+    };  
 
     // Check if admin already exists
     const existingAdmin = await Admin.findOne({
