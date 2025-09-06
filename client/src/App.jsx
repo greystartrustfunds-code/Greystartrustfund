@@ -16,6 +16,7 @@ import AdminTransactions from "./pages/AdminTransactions";
 import AdminChats from "./pages/AdminChats";
 import ChatSupport from "./pages/ChatSupport";
 import Footer from "./components/Footer";
+import PingModal from "./components/PingModal";
 
 function App() {
   const [currentPage, setCurrentPage] = useState("home");
@@ -26,38 +27,38 @@ function App() {
   useEffect(() => {
     const handleUrlChange = () => {
       const path = window.location.pathname;
-      
+
       // Handle admin routes first
-      if (path.startsWith('/admin/')) {
+      if (path.startsWith("/admin/")) {
         const adminRoutes = {
-          '/admin/login': 'admin-login',
-          '/admin/dashboard': 'admin-dashboard',
-          '/admin/users': 'admin-users',
-          '/admin/transactions': 'admin-transactions',
-          '/admin/chats': 'admin-chats'
+          "/admin/login": "admin-login",
+          "/admin/dashboard": "admin-dashboard",
+          "/admin/users": "admin-users",
+          "/admin/transactions": "admin-transactions",
+          "/admin/chats": "admin-chats",
         };
-        
+
         if (adminRoutes[path]) {
           setCurrentPage(adminRoutes[path]);
           return;
         }
       }
-      
+
       // Handle regular routes
       const pathToPageMap = {
-        '/': 'home',
-        '/about': 'about',
-        '/contact': 'contact',
-        '/faqs': 'faqs',
-        '/login': 'login',
-        '/signup': 'signup',
-        '/dashboard': 'dashboard',
-        '/transactions': 'transactions',
-        '/plans': 'plans',
-        '/chat': 'chat'
+        "/": "home",
+        "/about": "about",
+        "/contact": "contact",
+        "/faqs": "faqs",
+        "/login": "login",
+        "/signup": "signup",
+        "/dashboard": "dashboard",
+        "/transactions": "transactions",
+        "/plans": "plans",
+        "/chat": "chat",
       };
 
-      const page = pathToPageMap[path] || 'home';
+      const page = pathToPageMap[path] || "home";
       setCurrentPage(page);
     };
 
@@ -65,10 +66,10 @@ function App() {
     handleUrlChange();
 
     // Listen for browser back/forward button
-    window.addEventListener('popstate', handleUrlChange);
-    
+    window.addEventListener("popstate", handleUrlChange);
+
     return () => {
-      window.removeEventListener('popstate', handleUrlChange);
+      window.removeEventListener("popstate", handleUrlChange);
     };
   }, []);
 
@@ -77,14 +78,14 @@ function App() {
     const adminToken = localStorage.getItem("adminToken");
 
     // Only override URL routing if user has tokens and URL is not already set
-    if (adminToken && !window.location.pathname.startsWith('/admin')) {
+    if (adminToken && !window.location.pathname.startsWith("/admin")) {
       setIsAdminAuthenticated(true);
       setCurrentPage("admin-dashboard");
-      window.history.pushState(null, '', '/admin/dashboard');
-    } else if (token && window.location.pathname === '/') {
+      window.history.pushState(null, "", "/admin/dashboard");
+    } else if (token && window.location.pathname === "/") {
       setIsAuthenticated(true);
       setCurrentPage("dashboard");
-      window.history.pushState(null, '', '/dashboard');
+      window.history.pushState(null, "", "/dashboard");
     }
   }, []);
 
@@ -203,6 +204,9 @@ function App() {
         currentPage !== "chat" && (
           <Footer isAdminAuthenticated={isAdminAuthenticated} />
         )}
+
+      {/* Ping Modal - Only show for authenticated users */}
+      {isAuthenticated && <PingModal setCurrentPage={setCurrentPage} />}
     </div>
   );
 }

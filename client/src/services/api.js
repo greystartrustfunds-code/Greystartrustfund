@@ -98,6 +98,11 @@ export const userAPI = {
     const response = await api.post("/user/withdraw", withdrawalData);
     return response.data;
   },
+
+  getPingNotification: async () => {
+    const response = await api.get("/user/ping-notification");
+    return response.data;
+  },
 };
 
 export const chatAPI = {

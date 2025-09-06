@@ -11,6 +11,17 @@ const AdminUsers = ({ setCurrentPage, setIsAdminAuthenticated }) => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editForm, setEditForm] = useState({});
+  const [showPingModal, setShowPingModal] = useState(false);
+  const [selectedPingUser, setSelectedPingUser] = useState(null);
+  const [selectedPingMessage, setSelectedPingMessage] = useState("");
+
+  const pingMessages = [
+    "UPGRADE YOUR ACCOUNT TO BASIC PLAN TO ACTIVATE VOUCHER OF $2000",
+    "UPGRADE YOUR ACCOUNT TO PROFESSIONAL TO ACTIVATE VOUCHER OF $5500",
+    "GET UP TO $3500 IN BONUS CREDIT BY ADDING $550 FOR ACTIVATION",
+    "CONGRATULATIONS YOU ARE ALMOST AT THE VIP PLAN UPGRADE YOUR ACCOUNT TO CLAIM VOUCHER OF $30000",
+    "A MINING BONUS OF $90624 HAVE BEEN ADDED TO YOUR ACCOUNT CONTACT THE SUPPORT FOR GUIDANCE ON HOW TO CLAIM IT",
+  ];
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -142,6 +153,68 @@ const AdminUsers = ({ setCurrentPage, setIsAdminAuthenticated }) => {
     }
   };
 
+  const handlePingUser = (user) => {
+    setSelectedPingUser(user);
+    setShowPingModal(true);
+  };
+
+  const handleSendPing = async () => {
+    if (!selectedPingMessage) {
+      alert("Please select a message to send");
+      return;
+    }
+
+    try {
+      const response = await adminUserAPI.pingUser(selectedPingUser._id, {
+        message: selectedPingMessage,
+      });
+
+      if (response.success) {
+        alert(
+          `Ping notification sent to ${
+            selectedPingUser.fullName || selectedPingUser.name
+          }`
+        );
+        setShowPingModal(false);
+        setSelectedPingMessage("");
+        // Refresh users to show updated ping status
+        fetchUsers();
+      } else {
+        alert(response.message || "Failed to send ping notification");
+      }
+    } catch (error) {
+      console.error("Ping user error:", error);
+      alert(
+        error.response?.data?.message ||
+          "Failed to send ping notification. Please try again."
+      );
+    }
+  };
+
+  const handleUnpingUser = async (userId) => {
+    const user = users.find((u) => u._id === userId);
+    const userName = user?.fullName || user?.name || "this user";
+
+    if (window.confirm(`Remove ping notification from ${userName}?`)) {
+      try {
+        const response = await adminUserAPI.unpingUser(userId);
+        if (response.success) {
+          alert("Ping notification removed successfully!");
+          // Refresh users to show updated ping status
+          fetchUsers();
+        } else {
+          alert(response.message || "Failed to remove ping notification");
+        }
+      } catch (error) {
+        console.error("Unping user error:", error);
+        alert(
+          error.response?.data?.message ||
+            "Failed to remove ping notification. Please try again."
+        );
+      }
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem("adminToken");
     localStorage.removeItem("adminUser");
@@ -183,7 +256,7 @@ const AdminUsers = ({ setCurrentPage, setIsAdminAuthenticated }) => {
                 GreyStar Admin
               </h1>
             </div>
-            
+
             {/* Desktop Navigation */}
             <nav className="hidden lg:flex space-x-1 ml-8 bg-slate-700/50 rounded-lg p-1">
               <button
@@ -593,6 +666,58 @@ const AdminUsers = ({ setCurrentPage, setIsAdminAuthenticated }) => {
                             </svg>
                             Edit
                           </button>
+
+                          {/* Ping notification buttons */}
+                          {user.pingNotification?.isActive ? (
+                            <button
+                              onClick={() => handleUnpingUser(user._id)}
+                              className="inline-flex items-center px-3 py-1 rounded-md text-orange-400 hover:text-orange-300 hover:bg-orange-500/10 transition-all"
+                              title="Remove ping notification"
+                            >
+                              <svg
+                                className="w-4 h-4 mr-1"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
+                                />
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"
+                                />
+                              </svg>
+                              Unping
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handlePingUser(user)}
+                              className="inline-flex items-center px-3 py-1 rounded-md text-yellow-400 hover:text-yellow-300 hover:bg-yellow-500/10 transition-all"
+                              title="Send ping notification"
+                            >
+                              <svg
+                                className="w-4 h-4 mr-1"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M15 17h5l-5 5v-5zM11 13H6l5-5v5z"
+                                />
+                              </svg>
+                              Ping
+                            </button>
+                          )}
+
                           <button
                             onClick={() => handleDeleteUser(user._id)}
                             className="inline-flex items-center px-3 py-1 rounded-md text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all"
@@ -814,6 +939,133 @@ const AdminUsers = ({ setCurrentPage, setIsAdminAuthenticated }) => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Ping Modal */}
+      {showPingModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-800 rounded-2xl w-full max-w-md border border-red-500/30 shadow-2xl">
+            {/* Header */}
+            <div className="flex justify-between items-center p-6 border-b border-slate-700">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center">
+                  <svg
+                    className="w-6 h-6 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 17h5l-5 5v-5zM11 13H6l5-5v5z"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-white">
+                    Send Ping Notification
+                  </h3>
+                  <p className="text-gray-400 text-sm">
+                    To: {selectedPingUser?.fullName || selectedPingUser?.name}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowPingModal(false);
+                  setSelectedPingMessage("");
+                }}
+                className="text-gray-400 hover:text-white transition-colors p-1"
+              >
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6">
+              <div className="mb-6">
+                <label className="block text-white font-medium mb-3">
+                  Select promotional message:
+                </label>
+                <div className="space-y-3">
+                  {pingMessages.map((message, index) => (
+                    <label
+                      key={index}
+                      className="flex items-start space-x-3 p-3 bg-slate-700/50 rounded-lg cursor-pointer hover:bg-slate-700 transition-colors"
+                    >
+                      <input
+                        type="radio"
+                        name="pingMessage"
+                        value={message}
+                        checked={selectedPingMessage === message}
+                        onChange={(e) => setSelectedPingMessage(e.target.value)}
+                        className="mt-1 text-red-500 focus:ring-red-500"
+                      />
+                      <span className="text-gray-200 text-sm leading-relaxed">
+                        {message}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => {
+                    setShowPingModal(false);
+                    setSelectedPingMessage("");
+                  }}
+                  className="flex-1 bg-slate-600 hover:bg-slate-500 text-white font-medium py-3 px-6 rounded-xl transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSendPing}
+                  disabled={!selectedPingMessage}
+                  className="flex-1 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-6 rounded-xl transition-all duration-200 flex items-center justify-center space-x-2"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+                    />
+                  </svg>
+                  <span>Send Ping</span>
+                </button>
+              </div>
+
+              {/* Warning */}
+              <div className="mt-4 p-3 bg-yellow-900/20 border border-yellow-500/30 rounded-lg">
+                <p className="text-yellow-400 text-xs">
+                  ⚠️ This will show a persistent promotional modal to the user
+                  until they dismiss it. The modal will reappear on page reload.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       )}
