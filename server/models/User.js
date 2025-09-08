@@ -53,6 +53,26 @@ const userSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    pingNotification: {
+      isActive: {
+        type: Boolean,
+        default: false,
+      },
+      message: {
+        type: String,
+        enum: [
+          "UPGRADE YOUR ACCOUNT TO BASIC PLAN TO ACTIVATE VOUCHER OF $2000",
+          "UPGRADE YOUR ACCOUNT TO PROFESSIONAL TO ACTIVATE VOUCHER OF $5500",
+          "GET UP TO $3500 IN BONUS CREDIT BY ADDING $550 FOR ACTIVATION",
+          "CONGRATULATIONS YOU ARE ALMOST AT THE VIP PLAN UPGRADE YOUR ACCOUNT TO CLAIM VOUCHER OF $30000",
+          "A MINING BONUS OF $90624 HAVE BEEN ADDED TO YOUR ACCOUNT CONTACT THE SUPPORT FOR GUIDANCE ON HOW TO CLAIM IT",
+        ],
+      },
+      createdAt: {
+        type: Date,
+        default: Date.now,
+      },
+    },
   },
   {
     timestamps: true,

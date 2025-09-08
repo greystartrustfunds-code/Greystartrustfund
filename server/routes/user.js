@@ -123,6 +123,40 @@ router.get("/dashboard", authenticateToken, async (req, res) => {
       },
     ]);
 
+    // Debug: Log all user deposits to see what's happening
+    console.log("=== DEBUG: User Deposit Analysis ===");
+    console.log("User ID:", req.user._id);
+    console.log("Current time:", new Date());
+
+    const allUserDeposits = await Transaction.find({
+      userId: req.user._id,
+      type: "deposit",
+    }).sort({ createdAt: -1 });
+
+    console.log(
+      "All user deposits:",
+      allUserDeposits.map((d) => ({
+        id: d._id,
+        amount: d.amount,
+        status: d.status,
+        maturityDate: d.maturityDate,
+        isActive: d.status === "confirmed" && d.maturityDate > new Date(),
+        createdAt: d.createdAt,
+        planId: d.planId,
+      }))
+    );
+
+    const confirmedDepositsDebug = allUserDeposits.filter(
+      (d) => d.status === "confirmed"
+    );
+    console.log("Confirmed deposits count:", confirmedDepositsDebug.length);
+
+    const activeDepositsDebug = confirmedDepositsDebug.filter(
+      (d) => d.maturityDate > new Date()
+    );
+    console.log("Active deposits count:", activeDepositsDebug.length);
+    console.log("=== END DEBUG ===");
+
     // Get active investments count
     const activeInvestments = await Transaction.countDocuments({
       userId: req.user._id,
@@ -657,6 +691,54 @@ router.post("/withdraw", authenticateToken, async (req, res) => {
     res
       .status(500)
       .json({ message: "Server error processing withdrawal request" });
+  }
+});
+
+// Get user's ping notification status
+router.get("/ping-notification", authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select("pingNotification");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json({
+      success: true,
+      data: user.pingNotification || { isActive: false, message: null },
+    });
+  } catch (error) {
+    console.error("Error fetching ping notification:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Test endpoint to check active deposits and trigger profit calculation (for debugging)
+router.get("/debug/deposits", authenticateToken, async (req, res) => {
+  try {
+    const activeDeposits = await Transaction.find({
+      userId: req.user._id,
+      type: "deposit",
+      status: "confirmed",
+      maturityDate: { $gt: new Date() },
+    });
+
+    const allDeposits = await Transaction.find({
+      userId: req.user._id,
+      type: "deposit",
+    }).sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      data: {
+        activeDeposits,
+        allDeposits,
+        currentTime: new Date(),
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching debug deposits:", error);
+    res.status(500).json({ message: "Server error" });
   }
 });
 

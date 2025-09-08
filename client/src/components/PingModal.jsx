@@ -8,6 +8,13 @@ const PingModal = ({ setCurrentPage }) => {
 
   useEffect(() => {
     checkForPingNotification();
+    
+    // Check once more after 10 seconds, then stop
+    const timeout = setTimeout(() => {
+      checkForPingNotification();
+    }, 10000);
+
+    return () => clearTimeout(timeout);
   }, []);
 
   const checkForPingNotification = async () => {

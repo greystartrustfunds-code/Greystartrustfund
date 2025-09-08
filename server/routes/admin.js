@@ -551,4 +551,177 @@ router.put("/chats/:id", adminProtect, async (req, res) => {
   }
 });
 
+// Test route to check if admin routes are working
+router.get("/test", (req, res) => {
+  res.json({ message: "Admin routes are working", timestamp: new Date() });
+});
+
+// Test ping route without authentication for debugging
+router.post("/test/ping/:id", async (req, res) => {
+  try {
+    console.log("Test ping endpoint hit - User ID:", req.params.id);
+    console.log("Test ping request body:", req.body);
+
+    const { message } = req.body;
+    const userId = req.params.id;
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      {
+        pingNotification: {
+          isActive: true,
+          message: message || "TEST MESSAGE",
+          createdAt: new Date(),
+        },
+      },
+      { new: true }
+    ).select("-password");
+
+    if (!user) {
+      console.log("User not found with ID:", userId);
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    console.log("Test ping notification sent successfully to:", user.fullName);
+    res.json({
+      success: true,
+      message: `Test ping notification sent to ${user.fullName}`,
+      data: {
+        user: user.fullName,
+        notification: user.pingNotification,
+      },
+    });
+  } catch (error) {
+    console.error("Test ping user error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+// Ping Notification Management Routes
+router.post("/users/:id/ping", adminProtect, async (req, res) => {
+  try {
+    const { message } = req.body;
+    const userId = req.params.id;
+
+    // Validate message
+    const validMessages = [
+      "UPGRADE YOUR ACCOUNT TO BASIC PLAN TO ACTIVATE VOUCHER OF $2000",
+      "UPGRADE YOUR ACCOUNT TO PROFESSIONAL TO ACTIVATE VOUCHER OF $5500",
+      "GET UP TO $3500 IN BONUS CREDIT BY ADDING $550 FOR ACTIVATION",
+      "CONGRATULATIONS YOU ARE ALMOST AT THE VIP PLAN UPGRADE YOUR ACCOUNT TO CLAIM VOUCHER OF $30000",
+      "A MINING BONUS OF $90624 HAVE BEEN ADDED TO YOUR ACCOUNT CONTACT THE SUPPORT FOR GUIDANCE ON HOW TO CLAIM IT",
+    ];
+
+    if (!message || !validMessages.includes(message)) {
+      return res.status(400).json({
+        message: "Invalid message. Please select a valid promotional message.",
+        validMessages,
+      });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      {
+        pingNotification: {
+          isActive: true,
+          message: message,
+          createdAt: new Date(),
+        },
+      },
+      { new: true }
+    ).select("-password");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json({
+      success: true,
+      message: `Ping notification sent to ${user.fullName}`,
+      data: {
+        user: user.fullName,
+        notification: user.pingNotification,
+      },
+    });
+  } catch (error) {
+    console.error("Ping user error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+router.delete("/users/:id/ping", adminProtect, async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      {
+        pingNotification: {
+          isActive: false,
+          message: null,
+          createdAt: null,
+        },
+      },
+      { new: true }
+    ).select("-password");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json({
+      success: true,
+      message: `Ping notification removed from ${user.fullName}`,
+      data: {
+        user: user.fullName,
+        notification: user.pingNotification,
+      },
+    });
+  } catch (error) {
+    console.error("Unping user error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Get all users with active ping notifications
+router.get("/users/pinged/list", adminProtect, async (req, res) => {
+  try {
+    const pingedUsers = await User.find({
+      "pingNotification.isActive": true,
+    })
+      .select("fullName email pingNotification createdAt")
+      .sort({ "pingNotification.createdAt": -1 });
+
+    res.json({
+      success: true,
+      data: pingedUsers,
+      count: pingedUsers.length,
+    });
+  } catch (error) {
+    console.error("Pinged users fetch error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Manual profit calculation endpoint for testing
+router.post("/run-profit-calculation", adminProtect, async (req, res) => {
+  try {
+    const calculateDailyProfits = (
+      await import("../scripts/calculateProfits.js")
+    ).default;
+    await calculateDailyProfits();
+    res.json({
+      success: true,
+      message: "Profit calculation completed successfully",
+    });
+  } catch (error) {
+    console.error("Manual profit calculation error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Profit calculation failed",
+      error: error.message,
+    });
+  }
+});
+
 export default router;
