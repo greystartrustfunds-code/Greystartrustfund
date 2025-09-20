@@ -301,6 +301,22 @@ router.patch("/transactions/:id/status", adminProtect, async (req, res) => {
       return res.status(400).json({ message: "Status is required" });
     }
 
+    // Validate status is in allowed enum values
+    const allowedStatuses = [
+      "pending",
+      "confirmed",
+      "completed",
+      "failed",
+      "cancelled",
+      "active",
+    ];
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({
+        message: "Invalid status value",
+        allowedStatuses: allowedStatuses,
+      });
+    }
+
     const transaction = await Transaction.findByIdAndUpdate(
       req.params.id,
       {
@@ -699,6 +715,74 @@ router.get("/users/pinged/list", adminProtect, async (req, res) => {
     });
   } catch (error) {
     console.error("Pinged users fetch error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Pause user earnings
+router.post("/users/:id/pause-earnings", adminProtect, async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const adminId = req.admin._id;
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      {
+        earningsPaused: true,
+        earningsPausedAt: new Date(),
+        earningsPausedBy: adminId,
+      },
+      { new: true }
+    ).select("-password");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json({
+      success: true,
+      message: `Earnings paused for ${user.fullName}`,
+      data: {
+        user: user.fullName,
+        earningsPaused: user.earningsPaused,
+        earningsPausedAt: user.earningsPausedAt,
+      },
+    });
+  } catch (error) {
+    console.error("Pause earnings error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Resume user earnings
+router.post("/users/:id/resume-earnings", adminProtect, async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      {
+        earningsPaused: false,
+        earningsPausedAt: null,
+        earningsPausedBy: null,
+      },
+      { new: true }
+    ).select("-password");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json({
+      success: true,
+      message: `Earnings resumed for ${user.fullName}`,
+      data: {
+        user: user.fullName,
+        earningsPaused: user.earningsPaused,
+      },
+    });
+  } catch (error) {
+    console.error("Resume earnings error:", error);
     res.status(500).json({ message: "Server error" });
   }
 });

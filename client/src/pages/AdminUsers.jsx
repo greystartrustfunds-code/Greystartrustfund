@@ -215,6 +215,62 @@ const AdminUsers = ({ setCurrentPage, setIsAdminAuthenticated }) => {
     }
   };
 
+  const handlePauseEarnings = async (userId) => {
+    const user = users.find((u) => u._id === userId);
+    const userName = user?.fullName || user?.name || "this user";
+
+    if (
+      window.confirm(
+        `Pause earnings for ${userName}? They will stop receiving daily profits until resumed.`
+      )
+    ) {
+      try {
+        const response = await adminUserAPI.pauseUserEarnings(userId);
+        if (response.success) {
+          alert(`Earnings paused for ${userName} successfully!`);
+          // Refresh users to show updated earnings status
+          fetchUsers();
+        } else {
+          alert(response.message || "Failed to pause earnings");
+        }
+      } catch (error) {
+        console.error("Pause earnings error:", error);
+        alert(
+          error.response?.data?.message ||
+            "Failed to pause earnings. Please try again."
+        );
+      }
+    }
+  };
+
+  const handleResumeEarnings = async (userId) => {
+    const user = users.find((u) => u._id === userId);
+    const userName = user?.fullName || user?.name || "this user";
+
+    if (
+      window.confirm(
+        `Resume earnings for ${userName}? They will start receiving daily profits again.`
+      )
+    ) {
+      try {
+        const response = await adminUserAPI.resumeUserEarnings(userId);
+        if (response.success) {
+          alert(`Earnings resumed for ${userName} successfully!`);
+          // Refresh users to show updated earnings status
+          fetchUsers();
+        } else {
+          alert(response.message || "Failed to resume earnings");
+        }
+      } catch (error) {
+        console.error("Resume earnings error:", error);
+        alert(
+          error.response?.data?.message ||
+            "Failed to resume earnings. Please try again."
+        );
+      }
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem("adminToken");
     localStorage.removeItem("adminUser");
@@ -489,6 +545,24 @@ const AdminUsers = ({ setCurrentPage, setIsAdminAuthenticated }) => {
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           strokeWidth={2}
+                          d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
+                        />
+                      </svg>
+                      <span>Earnings</span>
+                    </div>
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-200 uppercase tracking-wider">
+                    <div className="flex items-center space-x-2">
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
                           d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                         />
                       </svg>
@@ -639,6 +713,32 @@ const AdminUsers = ({ setCurrentPage, setIsAdminAuthenticated }) => {
                           )}
                         </span>
                       </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <span
+                          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                            user.earningsPaused
+                              ? "bg-red-500/20 text-red-400"
+                              : "bg-green-500/20 text-green-400"
+                          }`}
+                        >
+                          <svg
+                            className={`w-3 h-3 mr-1 ${
+                              user.earningsPaused
+                                ? "text-red-400"
+                                : "text-green-400"
+                            }`}
+                            fill="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            {user.earningsPaused ? (
+                              <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+                            ) : (
+                              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                            )}
+                          </svg>
+                          {user.earningsPaused ? "Paused" : "Active"}
+                        </span>
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-400">
                         ${(user.balance || 0).toFixed(2)}
                       </td>
@@ -715,6 +815,51 @@ const AdminUsers = ({ setCurrentPage, setIsAdminAuthenticated }) => {
                                 />
                               </svg>
                               Ping
+                            </button>
+                          )}
+
+                          {/* Earnings pause/resume buttons */}
+                          {user.earningsPaused ? (
+                            <button
+                              onClick={() => handleResumeEarnings(user._id)}
+                              className="inline-flex items-center px-3 py-1 rounded-md text-green-400 hover:text-green-300 hover:bg-green-500/10 transition-all"
+                              title="Resume user earnings"
+                            >
+                              <svg
+                                className="w-4 h-4 mr-1"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M19 10a9 9 0 11-18 0 9 9 0 0118 0z"
+                                />
+                              </svg>
+                              Resume
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handlePauseEarnings(user._id)}
+                              className="inline-flex items-center px-3 py-1 rounded-md text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all"
+                              title="Pause user earnings"
+                            >
+                              <svg
+                                className="w-4 h-4 mr-1"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                />
+                              </svg>
+                              Pause
                             </button>
                           )}
 

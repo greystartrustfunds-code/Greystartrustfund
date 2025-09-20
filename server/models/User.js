@@ -53,6 +53,17 @@ const userSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    earningsPaused: {
+      type: Boolean,
+      default: false,
+    },
+    earningsPausedAt: {
+      type: Date,
+    },
+    earningsPausedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Admin",
+    },
     pingNotification: {
       isActive: {
         type: Boolean,

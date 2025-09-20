@@ -23,8 +23,39 @@ const calculateDailyProfits = async () => {
 
     console.log(`Found ${activeDeposits.length} active deposits`);
 
+    // Auto-fix any deposits with invalid maturity dates (less than 7 days from creation)
+    const depositsToFix = activeDeposits.filter((deposit) => {
+      const sevenDaysFromCreation = new Date(
+        deposit.createdAt.getTime() + 7 * 24 * 60 * 60 * 1000
+      );
+      return deposit.maturityDate < sevenDaysFromCreation;
+    });
+
+    if (depositsToFix.length > 0) {
+      console.log(
+        `Auto-fixing ${depositsToFix.length} deposits with short maturity dates...`
+      );
+      for (const deposit of depositsToFix) {
+        const newMaturityDate = new Date(
+          deposit.createdAt.getTime() + 30 * 24 * 60 * 60 * 1000
+        );
+        await Transaction.findByIdAndUpdate(deposit._id, {
+          maturityDate: newMaturityDate,
+        });
+        console.log(`Fixed maturity date for deposit ${deposit._id}`);
+      }
+    }
+
     for (const deposit of activeDeposits) {
       try {
+        // Check if user's earnings are paused
+        if (deposit.userId.earningsPaused) {
+          console.log(
+            `Earnings paused for user ${deposit.userId.fullName} (${deposit.userId._id}), skipping deposit ${deposit._id}`
+          );
+          continue;
+        }
+
         // Get the plan details
         let plan;
         if (deposit.planId) {
@@ -71,30 +102,13 @@ const calculateDailyProfits = async () => {
           continue;
         }
 
-        // Check if enough time has passed since deposit creation
+        // Check if enough time has passed since deposit creation (24 hours for daily profits)
         const depositDate = new Date(deposit.createdAt);
         const currentTime = new Date();
         const timeDiffHours = (currentTime - depositDate) / (1000 * 60 * 60);
 
-        // Parse plan duration to get hours
-        let planDurationHours = 24; // default to 24 hours
-        if (plan.duration) {
-          const durationMatch = plan.duration.match(/(\d+)\s*hours?/i);
-          if (durationMatch) {
-            planDurationHours = parseInt(durationMatch[1]);
-          }
-        }
-
-        // Check if we should pay profit based on plan type and timing
-        let shouldPayProfit = false;
-
-        if (plan.type === "daily") {
-          // For daily plans (like VIP), pay every 24 hours
-          shouldPayProfit = timeDiffHours >= 24;
-        } else {
-          // For other plans, pay after the specified duration has passed
-          shouldPayProfit = timeDiffHours >= planDurationHours;
-        }
+        // For daily profit plans, we pay every 24 hours
+        const shouldPayProfit = timeDiffHours >= 24;
 
         if (!shouldPayProfit) {
           console.log(

@@ -78,6 +78,16 @@ export const adminUserAPI = {
     const response = await adminApi.get("/users/pinged/list");
     return response.data;
   },
+
+  pauseUserEarnings: async (id) => {
+    const response = await adminApi.post(`/users/${id}/pause-earnings`);
+    return response.data;
+  },
+
+  resumeUserEarnings: async (id) => {
+    const response = await adminApi.post(`/users/${id}/resume-earnings`);
+    return response.data;
+  },
 };
 
 export const adminTransactionAPI = {

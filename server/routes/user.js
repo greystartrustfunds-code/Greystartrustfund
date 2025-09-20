@@ -306,9 +306,7 @@ router.post("/deposit", authenticateToken, async (req, res) => {
       paymentProofUrl: paymentProofUrl,
       status: "pending",
       expectedProfit: (depositAmount * plan.profit) / 100,
-      maturityDate: new Date(
-        Date.now() + parseInt(plan.duration) * 60 * 60 * 1000
-      ), // Convert hours to milliseconds
+      maturityDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // Set to 30 days for all investment plans
     });
 
     await transaction.save();
