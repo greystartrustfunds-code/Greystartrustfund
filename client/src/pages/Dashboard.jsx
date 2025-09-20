@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import SimpleTradingChart from "../components/SimpleTradingChart";
-import { userAPI, transactionAPI } from "../services/api";
+import { userAPI, transactionAPI, authAPI } from "../services/api";
 
 const Dashboard = ({ setCurrentPage, setIsAuthenticated }) => {
   const [dashboardData, setDashboardData] = useState({
@@ -10,9 +10,25 @@ const Dashboard = ({ setCurrentPage, setIsAuthenticated }) => {
     totalDeposit: 0.0,
     totalWithdraws: 0.0,
   });
+  const [userData, setUserData] = useState({
+    name: "",
+    email: "",
+    username: "",
+    phone: "",
+    referralCode: "",
+    joinedDate: "",
+  });
   const [loading, setLoading] = useState(true);
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+  const [showReinvestModal, setShowReinvestModal] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [selectedReinvestPlan, setSelectedReinvestPlan] = useState(null);
+  const [reinvestForm, setReinvestForm] = useState({
+    amount: "",
+    planId: "",
+    planName: "",
+  });
   const [depositForm, setDepositForm] = useState({
     amount: "",
     selectedAccount: "",
@@ -80,9 +96,57 @@ const Dashboard = ({ setCurrentPage, setIsAuthenticated }) => {
     }
   };
 
+  const fetchUserData = async () => {
+    try {
+      const user = JSON.parse(localStorage.getItem("user")) || {};
+      const response = await authAPI.getProfile();
+      if (response.success) {
+        const userData = {
+          name: response.data.fullName || user.fullName || "User",
+          email: response.data.email || user.email || "",
+          username: response.data.username || user.username || "",
+          phone: response.data.phone || "",
+          referralCode: response.data.referralCode || user.referralCode || "",
+          joinedDate:
+            new Date(
+              response.data.createdAt || user.createdAt
+            ).toLocaleDateString() || "",
+        };
+        setUserData(userData);
+      }
+    } catch (error) {
+      // Fallback to localStorage data if API fails
+      const user = JSON.parse(localStorage.getItem("user")) || {};
+      setUserData({
+        name: user.fullName || "User",
+        email: user.email || "",
+        username: user.username || "",
+        phone: "",
+        referralCode: user.referralCode || "",
+        joinedDate: new Date(user.createdAt).toLocaleDateString() || "",
+      });
+      console.error("Error fetching user data:", error);
+    }
+  };
+
   useEffect(() => {
     fetchDashboardData();
+    fetchUserData();
   }, []);
+
+  // Close profile modal when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showProfileModal && !event.target.closest(".profile-dropdown")) {
+        setShowProfileModal(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showProfileModal]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -103,6 +167,51 @@ const Dashboard = ({ setCurrentPage, setIsAuthenticated }) => {
 
   const handleWithdrawClick = () => {
     setShowWithdrawModal(true);
+  };
+
+  const handleReinvestClick = (planId) => {
+    const plans = {
+      starter: {
+        name: "Starter Plan",
+        minAmount: 25,
+        maxAmount: 599,
+        profit: 12,
+      },
+      basic: { name: "Basic Plan", minAmount: 600, maxAmount: 999, profit: 15 },
+      professional: {
+        name: "Professional Plan",
+        minAmount: 1000,
+        maxAmount: 9999,
+        profit: 30,
+      },
+      vip: {
+        name: "VIP Plan",
+        minAmount: 10000,
+        maxAmount: Infinity,
+        profit: 60,
+      },
+    };
+
+    const plan = plans[planId];
+    if (!plan) return;
+
+    // Check if user has enough earnings for minimum plan amount
+    if (dashboardData.earnings < plan.minAmount) {
+      alert(
+        `Minimum amount for ${plan.name} is $${plan.minAmount}. You need $${(
+          plan.minAmount - dashboardData.earnings
+        ).toFixed(2)} more earnings.`
+      );
+      return;
+    }
+
+    setSelectedReinvestPlan(plan);
+    setReinvestForm({
+      amount: plan.minAmount.toString(),
+      planId: planId,
+      planName: plan.name,
+    });
+    setShowReinvestModal(true);
   };
 
   const handleDepositFormChange = (field, value) => {
@@ -127,6 +236,78 @@ const Dashboard = ({ setCurrentPage, setIsAuthenticated }) => {
         ...prev,
         [field]: value,
       }));
+    }
+  };
+
+  const handleReinvestFormChange = (field, value) => {
+    setReinvestForm((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleReinvestSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!reinvestForm.amount || !reinvestForm.planId) {
+      alert("Please fill in all required fields");
+      return;
+    }
+
+    const amount = parseFloat(reinvestForm.amount);
+    if (amount <= 0) {
+      alert("Please enter a valid amount");
+      return;
+    }
+
+    if (amount > dashboardData.earnings) {
+      alert("Insufficient earnings for this investment amount");
+      return;
+    }
+
+    if (selectedReinvestPlan) {
+      if (amount < selectedReinvestPlan.minAmount) {
+        alert(
+          `Minimum amount for ${selectedReinvestPlan.name} is $${selectedReinvestPlan.minAmount}`
+        );
+        return;
+      }
+      if (amount > selectedReinvestPlan.maxAmount) {
+        alert(
+          `Maximum amount for ${selectedReinvestPlan.name} is $${selectedReinvestPlan.maxAmount}`
+        );
+        return;
+      }
+    }
+
+    setSubmitLoading(true);
+    try {
+      const response = await userAPI.reinvestEarnings({
+        amount: amount,
+        planId: reinvestForm.planId,
+      });
+
+      if (response.success) {
+        alert(
+          `Successfully reinvested $${amount} into ${reinvestForm.planName}!`
+        );
+        setShowReinvestModal(false);
+        setReinvestForm({
+          amount: "",
+          planId: "",
+          planName: "",
+        });
+        setSelectedReinvestPlan(null);
+        // Refresh dashboard data
+        fetchDashboardData();
+      } else {
+        alert(response.message || "Failed to process reinvestment");
+      }
+    } catch (error) {
+      console.error("Reinvestment error:", error);
+      alert(error.response?.data?.message || "Failed to process reinvestment");
+    } finally {
+      setSubmitLoading(false);
     }
   };
 
@@ -318,24 +499,185 @@ const Dashboard = ({ setCurrentPage, setIsAuthenticated }) => {
 
         <div className="flex items-center space-x-2">
           <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-          <span className="text-sm font-medium font-rubik">GREYSTAR TRUST FUND</span>
+          <span className="text-sm font-medium font-rubik">
+            GREYSTAR TRUST FUND
+          </span>
         </div>
 
-        <button onClick={handleLogout} className="p-2">
-          <svg
-            className="w-6 h-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+        <div className="relative">
+          <button
+            onClick={() => setShowProfileModal(!showProfileModal)}
+            className="p-2 flex items-center space-x-2 hover:bg-slate-700 rounded-lg transition-colors"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-            />
-          </svg>
-        </button>
+            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+              <span className="text-white text-sm font-medium">
+                {userData.name.charAt(0).toUpperCase() || "U"}
+              </span>
+            </div>
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </button>
+
+          {/* Profile Dropdown */}
+          {showProfileModal && (
+            <div className="profile-dropdown absolute right-0 top-full mt-2 w-80 bg-slate-800 border border-slate-600 rounded-xl shadow-2xl z-50">
+              <div className="p-4">
+                {/* User Header */}
+                <div className="flex items-center space-x-3 mb-4 pb-4 border-b border-slate-600">
+                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                    <span className="text-white text-lg font-medium">
+                      {userData.name.charAt(0).toUpperCase() || "U"}
+                    </span>
+                  </div>
+                  <div>
+                    <h3 className="text-white font-medium">{userData.name}</h3>
+                    <p className="text-gray-400 text-sm">{userData.email}</p>
+                  </div>
+                </div>
+
+                {/* Account Information */}
+                <div className="space-y-3 mb-4">
+                  <h4 className="text-sm font-medium text-gray-300">
+                    Account Information
+                  </h4>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-gray-400 text-sm">Username:</span>
+                      <span className="text-white text-sm">
+                        {userData.username || "N/A"}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <span className="text-gray-400 text-sm">Email:</span>
+                      <span className="text-white text-sm">
+                        {userData.email || "N/A"}
+                      </span>
+                    </div>
+
+                    {userData.phone && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-400 text-sm">Phone:</span>
+                        <span className="text-white text-sm">
+                          {userData.phone}
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="flex justify-between">
+                      <span className="text-gray-400 text-sm">
+                        Referral Code:
+                      </span>
+                      <span className="text-blue-400 text-sm font-mono">
+                        {userData.referralCode || "N/A"}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <span className="text-gray-400 text-sm">
+                        Member Since:
+                      </span>
+                      <span className="text-white text-sm">
+                        {userData.joinedDate || "N/A"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Account Stats */}
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div className="bg-slate-700/50 rounded-lg p-3 text-center">
+                    <p className="text-gray-400 text-xs mb-1">Balance</p>
+                    <p className="text-white font-semibold">
+                      ${dashboardData.balance.toFixed(2)}
+                    </p>
+                  </div>
+                  <div className="bg-slate-700/50 rounded-lg p-3 text-center">
+                    <p className="text-gray-400 text-xs mb-1">Earnings</p>
+                    <p className="text-green-400 font-semibold">
+                      ${dashboardData.earnings.toFixed(2)}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="space-y-2 pt-4 border-t border-slate-600">
+                  <button className="w-full flex items-center space-x-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-slate-700/50 rounded-lg transition-colors">
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                      />
+                    </svg>
+                    <span>Edit Profile</span>
+                  </button>
+
+                  <button className="w-full flex items-center space-x-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-slate-700/50 rounded-lg transition-colors">
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                    </svg>
+                    <span>Settings</span>
+                  </button>
+
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center space-x-3 px-3 py-2 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded-lg transition-colors"
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                      />
+                    </svg>
+                    <span>Logout</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </header>
 
       {/* Main Content */}
@@ -449,6 +791,117 @@ const Dashboard = ({ setCurrentPage, setIsAuthenticated }) => {
           </div>
         </div>
 
+        {/* Reinvestment Section */}
+        <div className="bg-slate-800 rounded-xl p-6 shadow-sm border border-slate-700">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-white">Reinvest Earnings</h2>
+            <div className="text-sm text-gray-300">
+              Available:{" "}
+              <span className="text-green-400 font-semibold">
+                ${dashboardData.earnings.toFixed(2)}
+              </span>
+            </div>
+          </div>
+
+          {dashboardData.earnings > 0 ? (
+            <div className="space-y-4">
+              <p className="text-gray-300 text-sm">
+                Reinvest your profits to compound your returns and grow your
+                investment portfolio.
+              </p>
+
+              {/* Investment Plans Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div
+                  className="p-4 bg-slate-700/50 border border-slate-600 rounded-lg hover:border-blue-500 transition-colors cursor-pointer"
+                  onClick={() => handleReinvestClick("starter")}
+                >
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h3 className="text-white font-medium">Starter Plan</h3>
+                      <p className="text-sm text-gray-400">$25 - $599</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-blue-400 font-bold">12%</p>
+                      <p className="text-xs text-gray-400">every 3 days</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div
+                  className="p-4 bg-slate-700/50 border border-slate-600 rounded-lg hover:border-blue-500 transition-colors cursor-pointer"
+                  onClick={() => handleReinvestClick("basic")}
+                >
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h3 className="text-white font-medium">Basic Plan</h3>
+                      <p className="text-sm text-gray-400">$600 - $999</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-blue-400 font-bold">15%</p>
+                      <p className="text-xs text-gray-400">every 3 days</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div
+                  className="p-4 bg-slate-700/50 border border-slate-600 rounded-lg hover:border-blue-500 transition-colors cursor-pointer"
+                  onClick={() => handleReinvestClick("professional")}
+                >
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h3 className="text-white font-medium">Professional</h3>
+                      <p className="text-sm text-gray-400">$1,000 - $9,999</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-blue-400 font-bold">30%</p>
+                      <p className="text-xs text-gray-400">every 3 days</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div
+                  className="p-4 bg-slate-700/50 border border-slate-600 rounded-lg hover:border-blue-500 transition-colors cursor-pointer"
+                  onClick={() => handleReinvestClick("vip")}
+                >
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h3 className="text-white font-medium">VIP Plan</h3>
+                      <p className="text-sm text-gray-400">$10,000+</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-blue-400 font-bold">60%</p>
+                      <p className="text-xs text-gray-400">every 3 days</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <svg
+                className="w-16 h-16 text-gray-600 mx-auto mb-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <h3 className="text-gray-400 font-medium mb-2">
+                No Earnings Available
+              </h3>
+              <p className="text-gray-500 text-sm">
+                Start investing to earn profits that you can reinvest
+              </p>
+            </div>
+          )}
+        </div>
+
         {/* Referral Section */}
         <div className="bg-slate-800 rounded-xl p-4 shadow-sm border border-slate-700">
           <div className="flex items-center justify-between">
@@ -482,9 +935,9 @@ const Dashboard = ({ setCurrentPage, setIsAuthenticated }) => {
                 Track Progress
               </h3>
               <p className="text-gray-300 text-sm mb-4">
-                Click "Transaction" to see your daily profits, interest will be
-                added to your account balance in accordance with the chosen
-                invest plan.
+                Click "Transaction" to see your profits paid every 3 days,
+                interest will be added to your account balance in accordance
+                with the chosen invest plan.
               </p>
             </div>
 
@@ -999,6 +1452,224 @@ const Dashboard = ({ setCurrentPage, setIsAuthenticated }) => {
                           />
                         </svg>
                         <span>Submit Withdrawal Request</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reinvestment Modal */}
+      {showReinvestModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-gradient-to-br from-slate-800/95 to-slate-700/95 backdrop-blur-xl rounded-2xl border border-slate-600/50 shadow-2xl w-full max-w-lg">
+            <div className="p-6">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                    <svg
+                      className="w-6 h-6 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                      />
+                    </svg>
+                  </div>
+                  <h2 className="text-2xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                    Reinvest Earnings
+                  </h2>
+                </div>
+                <button
+                  onClick={() => setShowReinvestModal(false)}
+                  className="w-8 h-8 bg-slate-600/50 hover:bg-slate-600 rounded-lg flex items-center justify-center transition-colors"
+                >
+                  <svg
+                    className="w-5 h-5 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              <form onSubmit={handleReinvestSubmit} className="space-y-6">
+                {/* Plan Info */}
+                {selectedReinvestPlan && (
+                  <div className="p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-blue-300 font-medium">
+                          {selectedReinvestPlan.name}
+                        </h3>
+                        <p className="text-blue-200 text-sm">
+                          Range: ${selectedReinvestPlan.minAmount} -{" "}
+                          {selectedReinvestPlan.maxAmount === Infinity
+                            ? "∞"
+                            : `$${selectedReinvestPlan.maxAmount}`}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-blue-400 font-bold text-xl">
+                          {selectedReinvestPlan.profit}%
+                        </p>
+                        <p className="text-blue-300 text-sm">every 3 days</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Earnings Info */}
+                <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <svg
+                      className="w-5 h-5 text-green-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    <span className="text-green-300 font-medium">
+                      Available Earnings: ${dashboardData.earnings.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Amount Input */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Reinvestment Amount (USD)
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <span className="text-gray-400">$</span>
+                    </div>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min={selectedReinvestPlan?.minAmount || 25}
+                      max={Math.min(
+                        dashboardData.earnings,
+                        selectedReinvestPlan?.maxAmount || Infinity
+                      )}
+                      value={reinvestForm.amount}
+                      onChange={(e) =>
+                        handleReinvestFormChange("amount", e.target.value)
+                      }
+                      className="w-full pl-8 pr-4 py-3 bg-slate-700/50 border border-slate-600 text-white placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                      placeholder="Enter reinvestment amount"
+                      required
+                    />
+                  </div>
+                  {selectedReinvestPlan && (
+                    <p className="mt-2 text-sm text-gray-400">
+                      Minimum: ${selectedReinvestPlan.minAmount} | Maximum:{" "}
+                      {selectedReinvestPlan.maxAmount === Infinity
+                        ? "No limit"
+                        : `$${selectedReinvestPlan.maxAmount}`}
+                    </p>
+                  )}
+                </div>
+
+                {/* Info Notice */}
+                <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-4">
+                  <div className="flex items-start space-x-2">
+                    <svg
+                      className="w-5 h-5 text-yellow-400 mt-0.5 flex-shrink-0"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    <div>
+                      <p className="text-yellow-400 text-sm font-medium mb-2">
+                        Reinvestment Details:
+                      </p>
+                      <ul className="text-yellow-300 text-sm space-y-1">
+                        <li>• Your earnings will be automatically invested</li>
+                        <li>• New investment cycle starts immediately</li>
+                        <li>• 30-day maturity period applies</li>
+                        <li>• Profits paid every 3 days to your balance</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Submit Button */}
+                <div className="flex justify-end space-x-4 pt-6 border-t border-slate-600/50">
+                  <button
+                    type="button"
+                    onClick={() => setShowReinvestModal(false)}
+                    className="px-6 py-3 text-gray-300 hover:text-white hover:bg-slate-600/50 rounded-lg font-medium transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submitLoading || !reinvestForm.amount}
+                    className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-700 hover:from-blue-700 hover:to-purple-800 disabled:opacity-50 text-white rounded-lg font-medium shadow-lg transition-all transform hover:scale-105 flex items-center space-x-2"
+                  >
+                    {submitLoading ? (
+                      <>
+                        <svg
+                          className="w-4 h-4 animate-spin"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                          />
+                        </svg>
+                        <span>Processing...</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                          />
+                        </svg>
+                        <span>Confirm Reinvestment</span>
                       </>
                     )}
                   </button>

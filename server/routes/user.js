@@ -711,6 +711,141 @@ router.get("/ping-notification", authenticateToken, async (req, res) => {
   }
 });
 
+// Reinvest earnings into a new investment plan
+router.post("/reinvest", authenticateToken, async (req, res) => {
+  try {
+    const { amount, planId } = req.body;
+
+    // Validation
+    if (!amount || !planId || amount <= 0) {
+      return res.status(400).json({
+        message: "Amount and plan ID are required, amount must be positive",
+      });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Check if user has enough earnings
+    if (amount > user.totalEarnings) {
+      return res.status(400).json({
+        message: `Insufficient earnings. Available: $${user.totalEarnings}`,
+      });
+    }
+
+    // Validate plan and minimum amount
+    const plans = {
+      starter: {
+        name: "Starter Plan",
+        minAmount: 25,
+        maxAmount: 599,
+        profit: 12,
+      },
+      basic: { name: "Basic Plan", minAmount: 600, maxAmount: 999, profit: 15 },
+      professional: {
+        name: "Professional Plan",
+        minAmount: 1000,
+        maxAmount: 9999,
+        profit: 30,
+      },
+      vip: {
+        name: "VIP Plan",
+        minAmount: 10000,
+        maxAmount: Infinity,
+        profit: 60,
+      },
+    };
+
+    const selectedPlan = plans[planId];
+    if (!selectedPlan) {
+      return res.status(400).json({ message: "Invalid plan selected" });
+    }
+
+    if (amount < selectedPlan.minAmount) {
+      return res.status(400).json({
+        message: `Minimum amount for ${selectedPlan.name} is $${selectedPlan.minAmount}`,
+      });
+    }
+
+    if (amount > selectedPlan.maxAmount) {
+      return res.status(400).json({
+        message: `Maximum amount for ${selectedPlan.name} is $${selectedPlan.maxAmount}`,
+      });
+    }
+
+    // Calculate maturity date (30 days from now)
+    const maturityDate = new Date();
+    maturityDate.setDate(maturityDate.getDate() + 30);
+
+    // Create reinvestment transaction (deduction from earnings)
+    const reinvestmentTransaction = new Transaction({
+      userId: req.user._id,
+      type: "reinvestment",
+      amount: amount,
+      planId: planId,
+      planName: selectedPlan.name,
+      status: "completed",
+      description: `Reinvestment from earnings into ${selectedPlan.name}`,
+    });
+
+    await reinvestmentTransaction.save();
+
+    // Create new deposit transaction (the actual new investment)
+    const newDepositTransaction = new Transaction({
+      userId: req.user._id,
+      type: "deposit",
+      amount: amount,
+      planId: planId,
+      planName: selectedPlan.name,
+      status: "confirmed", // Auto-confirm since it's from earnings
+      maturityDate: maturityDate,
+      description: `Reinvestment deposit - ${selectedPlan.name}`,
+    });
+
+    await newDepositTransaction.save();
+
+    // Update user's total earnings (deduct the reinvested amount)
+    await User.findByIdAndUpdate(req.user._id, {
+      $inc: { totalEarnings: -amount },
+    });
+
+    res.json({
+      success: true,
+      message: `Successfully reinvested $${amount} into ${selectedPlan.name}`,
+      data: {
+        reinvestmentTransaction,
+        newDepositTransaction,
+        remainingEarnings: user.totalEarnings - amount,
+      },
+    });
+  } catch (error) {
+    console.error("Reinvestment error:", error);
+    res.status(500).json({ message: "Server error during reinvestment" });
+  }
+});
+
+// Get reinvestment history
+router.get("/reinvestments", authenticateToken, async (req, res) => {
+  try {
+    const reinvestments = await Transaction.find({
+      userId: req.user._id,
+      type: "reinvestment",
+    })
+      .sort({ createdAt: -1 })
+      .limit(50);
+
+    res.json({
+      success: true,
+      data: reinvestments,
+    });
+  } catch (error) {
+    console.error("Error fetching reinvestments:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 // Test endpoint to check active deposits and trigger profit calculation (for debugging)
 router.get("/debug/deposits", authenticateToken, async (req, res) => {
   try {

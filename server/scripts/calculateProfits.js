@@ -6,7 +6,7 @@ import Plan from "../models/Plan.js";
 
 const calculateDailyProfits = async () => {
   try {
-    console.log("Starting daily profit calculation...");
+    console.log("Starting 3-day profit calculation...");
 
     // Connect to database if not connected
     if (mongoose.connection.readyState !== 1) {
@@ -69,29 +69,29 @@ const calculateDailyProfits = async () => {
               id: "starter",
               name: "Starter Plan",
               profit: 12,
-              duration: "720 hours", // 30 days for daily profits
-              type: "daily",
+              duration: "240 hours", // 10 cycles of 3 days (30 days total)
+              type: "every_3_days",
             },
             {
               id: "basic",
               name: "Basic Plan",
               profit: 15,
-              duration: "720 hours", // 30 days for daily profits
-              type: "daily",
+              duration: "240 hours", // 10 cycles of 3 days (30 days total)
+              type: "every_3_days",
             },
             {
               id: "professional",
               name: "Professional Plan",
               profit: 30,
-              duration: "720 hours", // 30 days for daily profits
-              type: "daily",
+              duration: "240 hours", // 10 cycles of 3 days (30 days total)
+              type: "every_3_days",
             },
             {
               id: "vip",
               name: "Vip Plan",
               profit: 60,
-              duration: "720 hours", // 30 days for daily profits
-              type: "daily",
+              duration: "240 hours", // 10 cycles of 3 days (30 days total)
+              type: "every_3_days",
             },
           ];
           plan = hardcodedPlans.find((p) => p.id === deposit.planId);
@@ -102,13 +102,13 @@ const calculateDailyProfits = async () => {
           continue;
         }
 
-        // Check if enough time has passed since deposit creation (24 hours for daily profits)
+        // Check if enough time has passed since deposit creation (72 hours for 3-day profits)
         const depositDate = new Date(deposit.createdAt);
         const currentTime = new Date();
         const timeDiffHours = (currentTime - depositDate) / (1000 * 60 * 60);
 
-        // For daily profit plans, we pay every 24 hours
-        const shouldPayProfit = timeDiffHours >= 24;
+        // For 3-day profit plans, we pay every 72 hours (3 days)
+        const shouldPayProfit = timeDiffHours >= 72;
 
         if (!shouldPayProfit) {
           console.log(
@@ -116,15 +116,15 @@ const calculateDailyProfits = async () => {
               deposit._id
             }. Time passed: ${timeDiffHours.toFixed(
               2
-            )} hours, Required: ${planDurationHours} hours`
+            )} hours, Required: 72 hours`
           );
           continue;
         }
 
-        // Calculate how many days of profit should have been paid
-        const daysSinceDeposit = Math.floor(timeDiffHours / 24);
+        // Calculate how many 3-day periods of profit should have been paid
+        const threeDayPeriods = Math.floor(timeDiffHours / 72);
         console.log(
-          `Deposit ${deposit._id}: ${daysSinceDeposit} days since creation`
+          `Deposit ${deposit._id}: ${threeDayPeriods} 3-day periods since creation`
         );
 
         // Check how many profit payments have been made for this deposit
@@ -135,11 +135,11 @@ const calculateDailyProfits = async () => {
         });
 
         console.log(
-          `Existing profits for this deposit: ${existingProfitsCount}, Should have: ${daysSinceDeposit}`
+          `Existing profits for this deposit: ${existingProfitsCount}, Should have: ${threeDayPeriods}`
         );
 
         // Calculate how many profits are due
-        const profitsDue = daysSinceDeposit - existingProfitsCount;
+        const profitsDue = threeDayPeriods - existingProfitsCount;
 
         if (profitsDue <= 0) {
           console.log(`No profits due for deposit ${deposit._id}`);
@@ -154,11 +154,11 @@ const calculateDailyProfits = async () => {
         for (let i = 0; i < profitsDue; i++) {
           // Calculate profit based on plan type
           let profitAmount;
-          if (plan.type === "daily") {
-            // Daily profit (percentage per day)
+          if (plan.type === "every_3_days") {
+            // 3-day profit (percentage per 3-day period)
             profitAmount = (deposit.amount * plan.profit) / 100;
           } else {
-            // One-time profit after duration
+            // Fallback for other types
             profitAmount = (deposit.amount * plan.profit) / 100;
           }
 
@@ -181,9 +181,9 @@ const calculateDailyProfits = async () => {
             type: "profit",
             amount: profitAmount,
             status: "completed",
-            description: `Daily profit from ${
+            description: `3-day profit from ${
               plan.name || plan.id
-            } plan - Deposit: $${deposit.amount} (${deposit._id}) - Day ${
+            } plan - Deposit: $${deposit.amount} (${deposit._id}) - Period ${
               existingProfitsCount + i + 1
             }`,
             planId: deposit.planId,
@@ -193,7 +193,7 @@ const calculateDailyProfits = async () => {
           await profitTransaction.save();
 
           console.log(
-            `Added $${profitAmount.toFixed(2)} profit (Day ${
+            `Added $${profitAmount.toFixed(2)} profit (Period ${
               existingProfitsCount + i + 1
             }) to user ${deposit.userId.fullName} from ${
               plan.name || plan.id
@@ -205,9 +205,9 @@ const calculateDailyProfits = async () => {
       }
     }
 
-    console.log("Daily profit calculation completed");
+    console.log("3-day profit calculation completed");
   } catch (error) {
-    console.error("Error in daily profit calculation:", error);
+    console.error("Error in 3-day profit calculation:", error);
   }
 };
 

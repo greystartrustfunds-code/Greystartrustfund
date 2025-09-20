@@ -103,6 +103,16 @@ export const userAPI = {
     const response = await api.get("/user/ping-notification");
     return response.data;
   },
+
+  reinvestEarnings: async (reinvestmentData) => {
+    const response = await api.post("/user/reinvest", reinvestmentData);
+    return response.data;
+  },
+
+  getReinvestmentHistory: async () => {
+    const response = await api.get("/user/reinvestments");
+    return response.data;
+  },
 };
 
 export const chatAPI = {

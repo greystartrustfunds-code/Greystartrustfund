@@ -8,13 +8,24 @@ const transactionSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ["deposit", "withdrawal", "investment", "profit", "referral_bonus"],
+    enum: [
+      "deposit",
+      "withdrawal",
+      "investment",
+      "profit",
+      "referral_bonus",
+      "reinvestment",
+    ],
     required: true,
   },
   planId: {
     type: String,
     required: function () {
-      return this.type === "investment";
+      return (
+        this.type === "investment" ||
+        this.type === "reinvestment" ||
+        this.type === "deposit"
+      );
     },
   },
   planName: String,
