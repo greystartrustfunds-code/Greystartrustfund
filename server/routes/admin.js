@@ -787,6 +787,223 @@ router.post("/users/:id/resume-earnings", adminProtect, async (req, res) => {
   }
 });
 
+// Get user financial details (balance, earnings, deposits)
+router.get("/users/:id/financial", adminProtect, async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    const user = await User.findById(userId).select("-password");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Get aggregated financial data
+    const [confirmedDeposits, totalProfits, totalWithdrawals, activeDeposits] =
+      await Promise.all([
+        Transaction.aggregate([
+          {
+            $match: { userId: user._id, type: "deposit", status: "confirmed" },
+          },
+          {
+            $group: {
+              _id: null,
+              total: { $sum: "$amount" },
+              count: { $sum: 1 },
+            },
+          },
+        ]),
+        Transaction.aggregate([
+          { $match: { userId: user._id, type: "profit", status: "completed" } },
+          {
+            $group: {
+              _id: null,
+              total: { $sum: "$amount" },
+              count: { $sum: 1 },
+            },
+          },
+        ]),
+        Transaction.aggregate([
+          {
+            $match: {
+              userId: user._id,
+              type: "withdrawal",
+              status: "confirmed",
+            },
+          },
+          {
+            $group: {
+              _id: null,
+              total: { $sum: "$amount" },
+              count: { $sum: 1 },
+            },
+          },
+        ]),
+        Transaction.find({
+          userId: user._id,
+          type: "deposit",
+          status: "confirmed",
+          maturityDate: { $gt: new Date() },
+        }).select("amount planId planName maturityDate createdAt"),
+      ]);
+
+    const financialData = {
+      currentBalance: user.balance || 0,
+      totalEarnings: user.totalEarnings || 0,
+      totalDeposits: confirmedDeposits[0]?.total || 0,
+      totalProfits: totalProfits[0]?.total || 0,
+      totalWithdrawals: totalWithdrawals[0]?.total || 0,
+      depositCount: confirmedDeposits[0]?.count || 0,
+      profitCount: totalProfits[0]?.count || 0,
+      withdrawalCount: totalWithdrawals[0]?.count || 0,
+      activeDeposits: activeDeposits.length,
+      activeDepositsData: activeDeposits,
+    };
+
+    res.json({
+      success: true,
+      data: {
+        user: {
+          id: user._id,
+          fullName: user.fullName,
+          email: user.email,
+          createdAt: user.createdAt,
+          isVerified: user.isVerified,
+        },
+        financial: financialData,
+      },
+    });
+  } catch (error) {
+    console.error("Get user financial error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Add to user balance
+router.post("/users/:id/add-balance", adminProtect, async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const { amount, reason } = req.body;
+
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ message: "Amount must be positive" });
+    }
+
+    if (!reason || reason.trim().length < 5) {
+      return res
+        .status(400)
+        .json({ message: "Reason is required (minimum 5 characters)" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const oldBalance = user.balance || 0;
+    const newBalance = oldBalance + parseFloat(amount);
+
+    // Update user balance
+    await User.findByIdAndUpdate(userId, {
+      balance: newBalance,
+    });
+
+    // Create transaction record for audit trail
+    const transaction = new Transaction({
+      userId: userId,
+      type: "balance_adjustment",
+      amount: parseFloat(amount),
+      status: "completed",
+      description: `Admin balance adjustment: ${reason}`,
+      processedBy: req.admin.id,
+      processedAt: new Date(),
+      adminNotes: `Balance adjusted from $${oldBalance.toFixed(
+        2
+      )} to $${newBalance.toFixed(2)}. Reason: ${reason}`,
+    });
+
+    await transaction.save();
+
+    res.json({
+      success: true,
+      message: `Added $${amount} to ${user.fullName}'s balance`,
+      data: {
+        user: user.fullName,
+        oldBalance: oldBalance,
+        amountAdded: parseFloat(amount),
+        newBalance: newBalance,
+        reason: reason,
+        transactionId: transaction._id,
+      },
+    });
+  } catch (error) {
+    console.error("Add balance error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Add to user earnings
+router.post("/users/:id/add-earnings", adminProtect, async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const { amount, reason } = req.body;
+
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ message: "Amount must be positive" });
+    }
+
+    if (!reason || reason.trim().length < 5) {
+      return res
+        .status(400)
+        .json({ message: "Reason is required (minimum 5 characters)" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const oldEarnings = user.totalEarnings || 0;
+    const newEarnings = oldEarnings + parseFloat(amount);
+
+    // Update user earnings
+    await User.findByIdAndUpdate(userId, {
+      totalEarnings: newEarnings,
+    });
+
+    // Create transaction record for audit trail
+    const transaction = new Transaction({
+      userId: userId,
+      type: "earnings_adjustment",
+      amount: parseFloat(amount),
+      status: "completed",
+      description: `Admin earnings adjustment: ${reason}`,
+      processedBy: req.admin.id,
+      processedAt: new Date(),
+      adminNotes: `Earnings adjusted from $${oldEarnings.toFixed(
+        2
+      )} to $${newEarnings.toFixed(2)}. Reason: ${reason}`,
+    });
+
+    await transaction.save();
+
+    res.json({
+      success: true,
+      message: `Added $${amount} to ${user.fullName}'s earnings`,
+      data: {
+        user: user.fullName,
+        oldEarnings: oldEarnings,
+        amountAdded: parseFloat(amount),
+        newEarnings: newEarnings,
+        reason: reason,
+        transactionId: transaction._id,
+      },
+    });
+  } catch (error) {
+    console.error("Add earnings error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 // Manual profit calculation endpoint for testing
 router.post("/run-profit-calculation", adminProtect, async (req, res) => {
   try {

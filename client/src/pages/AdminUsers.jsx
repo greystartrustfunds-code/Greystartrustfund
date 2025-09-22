@@ -14,6 +14,14 @@ const AdminUsers = ({ setCurrentPage, setIsAdminAuthenticated }) => {
   const [showPingModal, setShowPingModal] = useState(false);
   const [selectedPingUser, setSelectedPingUser] = useState(null);
   const [selectedPingMessage, setSelectedPingMessage] = useState("");
+  const [financialData, setFinancialData] = useState({});
+  const [showBalanceModal, setShowBalanceModal] = useState(false);
+  const [showEarningsModal, setShowEarningsModal] = useState(false);
+  const [selectedFinancialUser, setSelectedFinancialUser] = useState(null);
+  const [adjustmentForm, setAdjustmentForm] = useState({
+    amount: "",
+    reason: "",
+  });
 
   const pingMessages = [
     "UPGRADE YOUR ACCOUNT TO BASIC PLAN TO ACTIVATE VOUCHER OF $2000",
@@ -22,6 +30,30 @@ const AdminUsers = ({ setCurrentPage, setIsAdminAuthenticated }) => {
     "CONGRATULATIONS YOU ARE ALMOST AT THE VIP PLAN UPGRADE YOUR ACCOUNT TO CLAIM VOUCHER OF $30000",
     "A MINING BONUS OF $90624 HAVE BEEN ADDED TO YOUR ACCOUNT CONTACT THE SUPPORT FOR GUIDANCE ON HOW TO CLAIM IT",
   ];
+
+  const fetchFinancialData = useCallback(async (userId) => {
+    try {
+      const response = await adminUserAPI.getUserFinancial(userId);
+      if (response.success) {
+        setFinancialData((prev) => ({
+          ...prev,
+          [userId]: response.data,
+        }));
+        return response.data;
+      }
+    } catch (error) {
+      console.error("Failed to fetch financial data:", error);
+    }
+    return null;
+  }, []);
+
+  const fetchAllUsersFinancialData = useCallback(
+    async (userList) => {
+      const promises = userList.map((user) => fetchFinancialData(user._id));
+      await Promise.all(promises);
+    },
+    [fetchFinancialData]
+  );
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -36,6 +68,10 @@ const AdminUsers = ({ setCurrentPage, setIsAdminAuthenticated }) => {
       if (response.success) {
         setUsers(response.data.users || []);
         setTotalPages(response.data.totalPages || 0);
+        // Fetch financial data for all users
+        if (response.data.users && response.data.users.length > 0) {
+          fetchAllUsersFinancialData(response.data.users);
+        }
       } else {
         console.error("Failed to fetch users:", response.message);
         setUsers([]);
@@ -67,6 +103,7 @@ const AdminUsers = ({ setCurrentPage, setIsAdminAuthenticated }) => {
     statusFilter,
     setIsAdminAuthenticated,
     setCurrentPage,
+    fetchAllUsersFinancialData,
   ]);
 
   useEffect(() => {
@@ -268,6 +305,102 @@ const AdminUsers = ({ setCurrentPage, setIsAdminAuthenticated }) => {
             "Failed to resume earnings. Please try again."
         );
       }
+    }
+  };
+
+  const handleOpenBalanceModal = (user) => {
+    setSelectedFinancialUser(user);
+    setAdjustmentForm({ amount: "", reason: "" });
+    setShowBalanceModal(true);
+  };
+
+  const handleOpenEarningsModal = (user) => {
+    setSelectedFinancialUser(user);
+    setAdjustmentForm({ amount: "", reason: "" });
+    setShowEarningsModal(true);
+  };
+
+  const handleAdjustBalance = async (e) => {
+    e.preventDefault();
+    if (
+      !selectedFinancialUser ||
+      !adjustmentForm.amount ||
+      !adjustmentForm.reason
+    ) {
+      alert("Please fill in all fields");
+      return;
+    }
+
+    try {
+      const response = await adminUserAPI.addUserBalance(
+        selectedFinancialUser._id,
+        {
+          amount: parseFloat(adjustmentForm.amount),
+          reason: adjustmentForm.reason
+        }
+      );
+
+      if (response.success) {
+        alert(
+          `Balance adjusted successfully for ${selectedFinancialUser.name}!`
+        );
+        setShowBalanceModal(false);
+        setSelectedFinancialUser(null);
+        setAdjustmentForm({ amount: "", reason: "" });
+        // Refresh financial data
+        fetchFinancialData(selectedFinancialUser._id);
+        fetchUsers();
+      } else {
+        alert(response.message || "Failed to adjust balance");
+      }
+    } catch (error) {
+      console.error("Balance adjustment error:", error);
+      alert(
+        error.response?.data?.message ||
+          "Failed to adjust balance. Please try again."
+      );
+    }
+  };
+
+  const handleAdjustEarnings = async (e) => {
+    e.preventDefault();
+    if (
+      !selectedFinancialUser ||
+      !adjustmentForm.amount ||
+      !adjustmentForm.reason
+    ) {
+      alert("Please fill in all fields");
+      return;
+    }
+
+    try {
+      const response = await adminUserAPI.addUserEarnings(
+        selectedFinancialUser._id,
+        {
+          amount: parseFloat(adjustmentForm.amount),
+          reason: adjustmentForm.reason
+        }
+      );
+
+      if (response.success) {
+        alert(
+          `Earnings adjusted successfully for ${selectedFinancialUser.name}!`
+        );
+        setShowEarningsModal(false);
+        setSelectedFinancialUser(null);
+        setAdjustmentForm({ amount: "", reason: "" });
+        // Refresh financial data
+        fetchFinancialData(selectedFinancialUser._id);
+        fetchUsers();
+      } else {
+        alert(response.message || "Failed to adjust earnings");
+      }
+    } catch (error) {
+      console.error("Earnings adjustment error:", error);
+      alert(
+        error.response?.data?.message ||
+          "Failed to adjust earnings. Please try again."
+      );
     }
   };
 
@@ -545,6 +678,24 @@ const AdminUsers = ({ setCurrentPage, setIsAdminAuthenticated }) => {
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           strokeWidth={2}
+                          d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+                        />
+                      </svg>
+                      <span>Deposits</span>
+                    </div>
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-200 uppercase tracking-wider">
+                    <div className="flex items-center space-x-2">
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
                           d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
                         />
                       </svg>
@@ -610,7 +761,7 @@ const AdminUsers = ({ setCurrentPage, setIsAdminAuthenticated }) => {
               <tbody className="divide-y divide-slate-600/30">
                 {loading ? (
                   <tr>
-                    <td colSpan="5" className="px-6 py-12 text-center">
+                    <td colSpan="7" className="px-6 py-12 text-center">
                       <div className="flex flex-col items-center">
                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mb-4"></div>
                         <span className="text-gray-400">Loading users...</span>
@@ -619,7 +770,7 @@ const AdminUsers = ({ setCurrentPage, setIsAdminAuthenticated }) => {
                   </tr>
                 ) : users.length === 0 ? (
                   <tr>
-                    <td colSpan="5" className="px-6 py-12 text-center">
+                    <td colSpan="7" className="px-6 py-12 text-center">
                       <div className="flex flex-col items-center">
                         <div className="w-16 h-16 bg-slate-700/50 rounded-full flex items-center justify-center mb-4">
                           <svg
@@ -739,8 +890,29 @@ const AdminUsers = ({ setCurrentPage, setIsAdminAuthenticated }) => {
                           {user.earningsPaused ? "Paused" : "Active"}
                         </span>
                       </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-400">
+                        $
+                        {financialData[user._id]
+                          ? (
+                              financialData[user._id].totalDeposits || 0
+                            ).toFixed(2)
+                          : "0.00"}
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-400">
-                        ${(user.balance || 0).toFixed(2)}
+                        $
+                        {financialData[user._id]
+                          ? (
+                              financialData[user._id].totalEarnings || 0
+                            ).toFixed(2)
+                          : "0.00"}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-purple-400">
+                        $
+                        {financialData[user._id]
+                          ? (
+                              financialData[user._id].currentBalance || 0
+                            ).toFixed(2)
+                          : (user.balance || 0).toFixed(2)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
                         {formatDate(user.createdAt)}
@@ -862,6 +1034,49 @@ const AdminUsers = ({ setCurrentPage, setIsAdminAuthenticated }) => {
                               Pause
                             </button>
                           )}
+
+                          {/* Financial adjustment buttons */}
+                          <button
+                            onClick={() => handleOpenBalanceModal(user)}
+                            className="inline-flex items-center px-3 py-1 rounded-md text-purple-400 hover:text-purple-300 hover:bg-purple-500/10 transition-all"
+                            title="Adjust user balance"
+                          >
+                            <svg
+                              className="w-4 h-4 mr-1"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                              />
+                            </svg>
+                            +Bal
+                          </button>
+
+                          <button
+                            onClick={() => handleOpenEarningsModal(user)}
+                            className="inline-flex items-center px-3 py-1 rounded-md text-green-400 hover:text-green-300 hover:bg-green-500/10 transition-all"
+                            title="Adjust user earnings"
+                          >
+                            <svg
+                              className="w-4 h-4 mr-1"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
+                              />
+                            </svg>
+                            +Earn
+                          </button>
 
                           <button
                             onClick={() => handleDeleteUser(user._id)}
@@ -1211,6 +1426,252 @@ const AdminUsers = ({ setCurrentPage, setIsAdminAuthenticated }) => {
                 </p>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Balance Adjustment Modal */}
+      {showBalanceModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-gradient-to-br from-slate-800/95 to-slate-700/95 backdrop-blur-xl rounded-2xl border border-slate-600/50 shadow-2xl p-8 w-full max-w-md">
+            <div className="flex items-center space-x-3 mb-6">
+              <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
+                <svg
+                  className="w-6 h-6 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                Adjust Balance
+              </h3>
+            </div>
+
+            <div className="mb-4 p-3 bg-slate-700/30 rounded-lg">
+              <p className="text-gray-300 text-sm">
+                <span className="font-medium">User:</span>{" "}
+                {selectedFinancialUser?.name}
+              </p>
+              <p className="text-gray-300 text-sm">
+                <span className="font-medium">Current Balance:</span> $
+                {financialData[
+                  selectedFinancialUser?._id
+                ]?.currentBalance?.toFixed(2) || "0.00"}
+              </p>
+            </div>
+
+            <form onSubmit={handleAdjustBalance} className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Adjustment Amount
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <span className="text-gray-400">$</span>
+                  </div>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={adjustmentForm.amount}
+                    onChange={(e) =>
+                      setAdjustmentForm({
+                        ...adjustmentForm,
+                        amount: e.target.value,
+                      })
+                    }
+                    className="w-full pl-8 pr-4 py-3 bg-slate-700/50 border border-slate-600 text-white placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                    placeholder="0.00"
+                    required
+                  />
+                </div>
+                <p className="text-xs text-gray-400 mt-1">
+                  Use positive numbers to add, negative to subtract
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Reason for Adjustment
+                </label>
+                <textarea
+                  value={adjustmentForm.reason}
+                  onChange={(e) =>
+                    setAdjustmentForm({
+                      ...adjustmentForm,
+                      reason: e.target.value,
+                    })
+                  }
+                  className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 text-white placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                  placeholder="Enter reason for balance adjustment..."
+                  rows="3"
+                  required
+                />
+              </div>
+
+              <div className="flex justify-end space-x-4 pt-6 border-t border-slate-600/50">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowBalanceModal(false);
+                    setSelectedFinancialUser(null);
+                    setAdjustmentForm({ amount: "", reason: "" });
+                  }}
+                  className="px-6 py-3 text-gray-300 hover:text-white hover:bg-slate-600/50 rounded-lg font-medium transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white rounded-lg font-medium shadow-lg transition-all transform hover:scale-105 flex items-center space-x-2"
+                >
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                  <span>Adjust Balance</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Earnings Adjustment Modal */}
+      {showEarningsModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-gradient-to-br from-slate-800/95 to-slate-700/95 backdrop-blur-xl rounded-2xl border border-slate-600/50 shadow-2xl p-8 w-full max-w-md">
+            <div className="flex items-center space-x-3 mb-6">
+              <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+                <svg
+                  className="w-6 h-6 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                Adjust Earnings
+              </h3>
+            </div>
+
+            <div className="mb-4 p-3 bg-slate-700/30 rounded-lg">
+              <p className="text-gray-300 text-sm">
+                <span className="font-medium">User:</span>{" "}
+                {selectedFinancialUser?.name}
+              </p>
+              <p className="text-gray-300 text-sm">
+                <span className="font-medium">Total Earnings:</span> $
+                {financialData[
+                  selectedFinancialUser?._id
+                ]?.totalEarnings?.toFixed(2) || "0.00"}
+              </p>
+            </div>
+
+            <form onSubmit={handleAdjustEarnings} className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Adjustment Amount
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <span className="text-gray-400">$</span>
+                  </div>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={adjustmentForm.amount}
+                    onChange={(e) =>
+                      setAdjustmentForm({
+                        ...adjustmentForm,
+                        amount: e.target.value,
+                      })
+                    }
+                    className="w-full pl-8 pr-4 py-3 bg-slate-700/50 border border-slate-600 text-white placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                    placeholder="0.00"
+                    required
+                  />
+                </div>
+                <p className="text-xs text-gray-400 mt-1">
+                  Use positive numbers to add, negative to subtract
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Reason for Adjustment
+                </label>
+                <textarea
+                  value={adjustmentForm.reason}
+                  onChange={(e) =>
+                    setAdjustmentForm({
+                      ...adjustmentForm,
+                      reason: e.target.value,
+                    })
+                  }
+                  className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 text-white placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                  placeholder="Enter reason for earnings adjustment..."
+                  rows="3"
+                  required
+                />
+              </div>
+
+              <div className="flex justify-end space-x-4 pt-6 border-t border-slate-600/50">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEarningsModal(false);
+                    setSelectedFinancialUser(null);
+                    setAdjustmentForm({ amount: "", reason: "" });
+                  }}
+                  className="px-6 py-3 text-gray-300 hover:text-white hover:bg-slate-600/50 rounded-lg font-medium transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-lg font-medium shadow-lg transition-all transform hover:scale-105 flex items-center space-x-2"
+                >
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                  <span>Adjust Earnings</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

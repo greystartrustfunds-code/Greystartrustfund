@@ -88,6 +88,21 @@ export const adminUserAPI = {
     const response = await adminApi.post(`/users/${id}/resume-earnings`);
     return response.data;
   },
+
+  getUserFinancial: async (id) => {
+    const response = await adminApi.get(`/users/${id}/financial`);
+    return response.data;
+  },
+
+  addUserBalance: async (id, data) => {
+    const response = await adminApi.post(`/users/${id}/add-balance`, data);
+    return response.data;
+  },
+
+  addUserEarnings: async (id, data) => {
+    const response = await adminApi.post(`/users/${id}/add-earnings`, data);
+    return response.data;
+  },
 };
 
 export const adminTransactionAPI = {

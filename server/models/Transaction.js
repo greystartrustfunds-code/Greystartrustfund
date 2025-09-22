@@ -15,6 +15,8 @@ const transactionSchema = new mongoose.Schema({
       "profit",
       "referral_bonus",
       "reinvestment",
+      "balance_adjustment",
+      "earnings_adjustment",
     ],
     required: true,
   },
