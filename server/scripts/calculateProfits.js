@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import User from "../models/User.js";
 import Transaction from "../models/Transaction.js";
 import Plan from "../models/Plan.js";
+import sendEmail, { emailTemplates } from "../utils/email.js";
 
 const calculateDailyProfits = async () => {
   try {
@@ -191,6 +192,26 @@ const calculateDailyProfits = async () => {
           });
 
           await profitTransaction.save();
+
+          // Send profit payment email notification
+          try {
+            const email = emailTemplates.profitPayment(
+              deposit.userId.fullName,
+              profitAmount.toFixed(2),
+              plan.name || plan.id
+            );
+            await sendEmail({
+              email: deposit.userId.email,
+              subject: email.subject,
+              message: email.message,
+              html: email.html,
+            });
+          } catch (emailError) {
+            console.error(
+              `Error sending profit email to ${deposit.userId.email}:`,
+              emailError
+            );
+          }
 
           console.log(
             `Added $${profitAmount.toFixed(2)} profit (Period ${

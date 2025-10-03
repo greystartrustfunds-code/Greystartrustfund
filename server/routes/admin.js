@@ -1,11 +1,13 @@
 import express from "express";
 import jwt from "jsonwebtoken";
 import Admin from "../models/Admin.js";
+import mongoose from "mongoose";
 import User from "../models/User.js";
 import Transaction from "../models/Transaction.js";
 import Chat from "../models/Chat.js";
 import Plan from "../models/Plan.js";
-import { adminProtect } from "../middleware/adminAuth.js";
+import { protect, admin } from "../middleware/auth.js";
+import sendEmail, { emailTemplates } from "../utils/email.js";
 
 const router = express.Router();
 
@@ -62,7 +64,7 @@ router.post("/login", async (req, res) => {
 });
 
 // Get Admin Dashboard Stats
-router.get("/dashboard", adminProtect, async (req, res) => {
+router.get("/dashboard", [protect, admin], async (req, res) => {
   try {
     const [
       totalUsers,
@@ -115,7 +117,7 @@ router.get("/dashboard", adminProtect, async (req, res) => {
 });
 
 // User Management Routes
-router.get("/users", adminProtect, async (req, res) => {
+router.get("/users", [protect, admin], async (req, res) => {
   try {
     const { page = 1, limit = 10, search, status } = req.query;
     const query = {};
@@ -154,7 +156,7 @@ router.get("/users", adminProtect, async (req, res) => {
   }
 });
 
-router.get("/users/:id", adminProtect, async (req, res) => {
+router.get("/users/:id", [protect, admin], async (req, res) => {
   try {
     const user = await User.findById(req.params.id).select("-password");
     if (!user) {
@@ -183,7 +185,7 @@ router.get("/users/:id", adminProtect, async (req, res) => {
   }
 });
 
-router.put("/users/:id", adminProtect, async (req, res) => {
+router.put("/users/:id", [protect, admin], async (req, res) => {
   try {
     const { fullName, email, isVerified, balance } = req.body;
 
@@ -207,7 +209,7 @@ router.put("/users/:id", adminProtect, async (req, res) => {
   }
 });
 
-router.delete("/users/:id", adminProtect, async (req, res) => {
+router.delete("/users/:id", [protect, admin], async (req, res) => {
   try {
     const user = await User.findByIdAndDelete(req.params.id);
     if (!user) {
@@ -229,7 +231,7 @@ router.delete("/users/:id", adminProtect, async (req, res) => {
 });
 
 // Transaction Management Routes
-router.get("/transactions", adminProtect, async (req, res) => {
+router.get("/transactions", [protect, admin], async (req, res) => {
   try {
     const { page = 1, limit = 10, status, type, userId } = req.query;
     const query = {};
@@ -262,7 +264,7 @@ router.get("/transactions", adminProtect, async (req, res) => {
   }
 });
 
-router.put("/transactions/:id", adminProtect, async (req, res) => {
+router.put("/transactions/:id", [protect, admin], async (req, res) => {
   try {
     const { status, adminNotes, txHash } = req.body;
 
@@ -293,7 +295,7 @@ router.put("/transactions/:id", adminProtect, async (req, res) => {
 });
 
 // Update transaction status only
-router.patch("/transactions/:id/status", adminProtect, async (req, res) => {
+router.patch("/transactions/:id/status", [protect, admin], async (req, res) => {
   try {
     const { status } = req.body;
 
@@ -364,6 +366,42 @@ router.patch("/transactions/:id/status", adminProtect, async (req, res) => {
       );
     }
 
+    // Send email notification for status updates
+    try {
+      let emailDetails = "";
+      if (status === "confirmed") {
+        if (transaction.type === "deposit") {
+          emailDetails =
+            "Your deposit has been verified and confirmed. The amount has been added to your balance.";
+        } else if (transaction.type === "withdrawal") {
+          emailDetails = "Your withdrawal has been approved and processed.";
+        }
+      } else if (status === "failed") {
+        emailDetails =
+          "Unfortunately, your transaction could not be processed. Please contact support for assistance.";
+      } else if (status === "cancelled") {
+        emailDetails = "Your transaction has been cancelled as requested.";
+      }
+
+      if (emailDetails) {
+        const email = emailTemplates.transactionUpdate(
+          transaction.userId.fullName,
+          transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1),
+          transaction.amount,
+          status,
+          emailDetails
+        );
+        await sendEmail({
+          email: transaction.userId.email,
+          subject: email.subject,
+          message: email.message,
+          html: email.html,
+        });
+      }
+    } catch (emailError) {
+      console.error("Error sending transaction status email:", emailError);
+    }
+
     res.json({
       success: true,
       data: transaction,
@@ -375,7 +413,7 @@ router.patch("/transactions/:id/status", adminProtect, async (req, res) => {
 });
 
 // Plan Management Routes
-router.get("/plans", adminProtect, async (req, res) => {
+router.get("/plans", [protect, admin], async (req, res) => {
   try {
     const plans = await Plan.find().sort({ createdAt: -1 });
     res.json({
@@ -388,7 +426,7 @@ router.get("/plans", adminProtect, async (req, res) => {
   }
 });
 
-router.post("/plans", adminProtect, async (req, res) => {
+router.post("/plans", [protect, admin], async (req, res) => {
   try {
     const planData = { ...req.body, createdBy: req.admin.id };
     const plan = new Plan(planData);
@@ -404,7 +442,7 @@ router.post("/plans", adminProtect, async (req, res) => {
   }
 });
 
-router.put("/plans/:id", adminProtect, async (req, res) => {
+router.put("/plans/:id", [protect, admin], async (req, res) => {
   try {
     const plan = await Plan.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
@@ -425,7 +463,7 @@ router.put("/plans/:id", adminProtect, async (req, res) => {
   }
 });
 
-router.delete("/plans/:id", adminProtect, async (req, res) => {
+router.delete("/plans/:id", [protect, admin], async (req, res) => {
   try {
     const plan = await Plan.findByIdAndDelete(req.params.id);
     if (!plan) {
@@ -443,7 +481,7 @@ router.delete("/plans/:id", adminProtect, async (req, res) => {
 });
 
 // Chat Management Routes
-router.get("/chats", adminProtect, async (req, res) => {
+router.get("/chats", [protect, admin], async (req, res) => {
   try {
     const { status = "open", page = 1, limit = 10 } = req.query;
     const query = status === "all" ? {} : { status };
@@ -472,7 +510,7 @@ router.get("/chats", adminProtect, async (req, res) => {
   }
 });
 
-router.get("/chats/:id", adminProtect, async (req, res) => {
+router.get("/chats/:id", [protect, admin], async (req, res) => {
   try {
     const chat = await Chat.findById(req.params.id)
       .populate("userId", "fullName email")
@@ -506,7 +544,7 @@ router.get("/chats/:id", adminProtect, async (req, res) => {
   }
 });
 
-router.post("/chats/:id/messages", adminProtect, async (req, res) => {
+router.post("/chats/:id/messages", [protect, admin], async (req, res) => {
   try {
     const { message } = req.body;
 
@@ -541,7 +579,7 @@ router.post("/chats/:id/messages", adminProtect, async (req, res) => {
   }
 });
 
-router.put("/chats/:id", adminProtect, async (req, res) => {
+router.put("/chats/:id", [protect, admin], async (req, res) => {
   try {
     const { status, priority, adminId } = req.body;
 
@@ -613,8 +651,67 @@ router.post("/test/ping/:id", async (req, res) => {
   }
 });
 
+// Get available ping messages
+router.get("/ping-messages", [protect, admin], async (req, res) => {
+  try {
+    const validMessages = [
+      "UPGRADE YOUR ACCOUNT TO BASIC PLAN TO ACTIVATE VOUCHER OF $2000",
+      "UPGRADE YOUR ACCOUNT TO PROFESSIONAL TO ACTIVATE VOUCHER OF $5500",
+      "GET UP TO $3500 IN BONUS CREDIT BY ADDING $550 FOR ACTIVATION",
+      "CONGRATULATIONS YOU ARE ALMOST AT THE VIP PLAN UPGRADE YOUR ACCOUNT TO CLAIM VOUCHER OF $30000",
+      "A MINING BONUS OF $90624 HAVE BEEN ADDED TO YOUR ACCOUNT CONTACT THE SUPPORT FOR GUIDANCE ON HOW TO CLAIM IT",
+      // New promotional messages
+      "Congratulations 🎊 You just won $5,420 profit, kindly deposit $1,014 to activate your Professional Plan.",
+      "Bravo 👏 You've been awarded $2,054 profit, activation requires only $460 to proceed.",
+      "Well done 🎉 Your profit prize of $3,760 is ready! Kindly activate with $740.",
+      "Amazing 👑 You secured $6,820 profit, kindly deposit $1,360 to activate it.",
+      "Congratulations 🌟 You won $4,250 profit, activate now with just $850.",
+      "Cheers 🎊 Your $7,940 profit is waiting, kindly activate with $1,590.",
+      "Wonderful 👏 You earned $3,360 profit, activation deposit required is $670.",
+      "Congratulations 🎉 Your prize of $8,250 profit is available, deposit $1,650 to activate.",
+      "Fantastic 🌟 You've won $5,910 profit, kindly deposit $1,190 to activate it.",
+      "Bravo 🎊 You're awarded $2,980 profit, activation requires only $600.",
+      "Cheers 👏 Your $6,480 profit is credited, activate it now with $1,300.",
+      "Congratulations 🎉 You just secured $4,670 profit, activation deposit: $930.",
+      "Great job 👑 You've unlocked $7,520 profit, kindly activate with $1,510.",
+      "Fantastic 🌟 Your profit prize is $3,480, kindly deposit $700 to activate.",
+      "Well done 🎊 You're rewarded with $9,240 profit, kindly deposit $1,850 for activation.",
+      "Congratulations 👏 You just earned $5,350 profit, activation deposit: $1,070.",
+      "Cheers 🎉 Your prize of $2,750 profit is here, activate with $550 only.",
+      "Bravo 🌟 You won $8,640 profit, kindly deposit $1,720 to activate.",
+      "Wonderful 🎊 Your profit reward is $4,820, activation requires $960.",
+      "Congratulations 👑 You just secured $6,990 profit, deposit $1,420 to activate it.",
+      // Premium profit messages
+      "🎉 Congratulations dear! You've just won $10,000 profit 🎊 Kindly deposit $2,000 to activate your plan.",
+      "👑 Bravo! Your account has been credited with $15,800 profit 🌟 Activate now with just $3,200.",
+      "🎊 Cheers! You've unlocked $21,600 profit 👏 Please deposit $4,320 to proceed.",
+      "🌟 Wonderful news! Your profit prize of $28,500 is ready 🎉 Kindly activate with $5,700.",
+      "🎉 Congratulations! You've earned $33,200 profit 👑 Deposit $6,600 to activate your professional plan.",
+      "👏 Great job! Your balance shows $40,750 profit 🎊 Please activate with $8,150.",
+      "🎊 Fantastic! You've won $46,900 profit 🌟 Deposit $9,380 now to activate it.",
+      "🌟 Cheers to you! Your profit prize is $52,600 🎉 Kindly proceed with $10,500 activation.",
+      "🎉 Amazing win! You just secured $61,400 profit 👑 Activate now with $12,200.",
+      "👏 Bravo! You've been credited with $67,800 profit 🎊 Deposit $13,560 to activate it.",
+      "🌟 Wonderful! You're awarded $74,200 profit 🎉 Kindly activate with $14,800.",
+      "🎊 Cheers! Your prize balance of $80,500 profit is waiting 👑 Deposit $16,100 now to activate.",
+      "🎉 Congratulations dear! You've unlocked $86,900 profit 👏 Kindly deposit $17,380 to proceed.",
+      "🌟 Fantastic win! Your prize is $91,700 profit 🎊 Activate now with $18,340.",
+      "🎉 Congratulations! You've just secured $95,300 profit 👑 Kindly proceed with $19,100 to activate it.",
+    ];
+
+    res.json({
+      success: true,
+      messages: validMessages,
+      total: validMessages.length,
+    });
+  } catch (error) {
+    console.error("Error fetching ping messages:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 // Ping Notification Management Routes
-router.post("/users/:id/ping", adminProtect, async (req, res) => {
+router.post("/users/:id/ping", [protect, admin], async (req, res) => {
   try {
     const { message } = req.body;
     const userId = req.params.id;
@@ -626,6 +723,43 @@ router.post("/users/:id/ping", adminProtect, async (req, res) => {
       "GET UP TO $3500 IN BONUS CREDIT BY ADDING $550 FOR ACTIVATION",
       "CONGRATULATIONS YOU ARE ALMOST AT THE VIP PLAN UPGRADE YOUR ACCOUNT TO CLAIM VOUCHER OF $30000",
       "A MINING BONUS OF $90624 HAVE BEEN ADDED TO YOUR ACCOUNT CONTACT THE SUPPORT FOR GUIDANCE ON HOW TO CLAIM IT",
+      // New promotional messages
+      "Congratulations 🎊 You just won $5,420 profit, kindly deposit $1,014 to activate your Professional Plan.",
+      "Bravo 👏 You've been awarded $2,054 profit, activation requires only $460 to proceed.",
+      "Well done 🎉 Your profit prize of $3,760 is ready! Kindly activate with $740.",
+      "Amazing 👑 You secured $6,820 profit, kindly deposit $1,360 to activate it.",
+      "Congratulations 🌟 You won $4,250 profit, activate now with just $850.",
+      "Cheers 🎊 Your $7,940 profit is waiting, kindly activate with $1,590.",
+      "Wonderful 👏 You earned $3,360 profit, activation deposit required is $670.",
+      "Congratulations 🎉 Your prize of $8,250 profit is available, deposit $1,650 to activate.",
+      "Fantastic 🌟 You've won $5,910 profit, kindly deposit $1,190 to activate it.",
+      "Bravo 🎊 You're awarded $2,980 profit, activation requires only $600.",
+      "Cheers 👏 Your $6,480 profit is credited, activate it now with $1,300.",
+      "Congratulations 🎉 You just secured $4,670 profit, activation deposit: $930.",
+      "Great job 👑 You've unlocked $7,520 profit, kindly activate with $1,510.",
+      "Fantastic 🌟 Your profit prize is $3,480, kindly deposit $700 to activate.",
+      "Well done 🎊 You're rewarded with $9,240 profit, kindly deposit $1,850 for activation.",
+      "Congratulations 👏 You just earned $5,350 profit, activation deposit: $1,070.",
+      "Cheers 🎉 Your prize of $2,750 profit is here, activate with $550 only.",
+      "Bravo 🌟 You won $8,640 profit, kindly deposit $1,720 to activate.",
+      "Wonderful 🎊 Your profit reward is $4,820, activation requires $960.",
+      "Congratulations 👑 You just secured $6,990 profit, deposit $1,420 to activate it.",
+      // Premium profit messages
+      "🎉 Congratulations dear! You've just won $10,000 profit 🎊 Kindly deposit $2,000 to activate your plan.",
+      "👑 Bravo! Your account has been credited with $15,800 profit 🌟 Activate now with just $3,200.",
+      "🎊 Cheers! You've unlocked $21,600 profit 👏 Please deposit $4,320 to proceed.",
+      "🌟 Wonderful news! Your profit prize of $28,500 is ready 🎉 Kindly activate with $5,700.",
+      "🎉 Congratulations! You've earned $33,200 profit 👑 Deposit $6,600 to activate your professional plan.",
+      "👏 Great job! Your balance shows $40,750 profit 🎊 Please activate with $8,150.",
+      "🎊 Fantastic! You've won $46,900 profit 🌟 Deposit $9,380 now to activate it.",
+      "🌟 Cheers to you! Your profit prize is $52,600 🎉 Kindly proceed with $10,500 activation.",
+      "🎉 Amazing win! You just secured $61,400 profit 👑 Activate now with $12,200.",
+      "👏 Bravo! You've been credited with $67,800 profit 🎊 Deposit $13,560 to activate it.",
+      "🌟 Wonderful! You're awarded $74,200 profit 🎉 Kindly activate with $14,800.",
+      "🎊 Cheers! Your prize balance of $80,500 profit is waiting 👑 Deposit $16,100 now to activate.",
+      "🎉 Congratulations dear! You've unlocked $86,900 profit 👏 Kindly deposit $17,380 to proceed.",
+      "🌟 Fantastic win! Your prize is $91,700 profit 🎊 Activate now with $18,340.",
+      "🎉 Congratulations! You've just secured $95,300 profit 👑 Kindly proceed with $19,100 to activate it.",
     ];
 
     if (!message || !validMessages.includes(message)) {
@@ -665,7 +799,7 @@ router.post("/users/:id/ping", adminProtect, async (req, res) => {
   }
 });
 
-router.delete("/users/:id/ping", adminProtect, async (req, res) => {
+router.delete("/users/:id/ping", [protect, admin], async (req, res) => {
   try {
     const userId = req.params.id;
 
@@ -673,7 +807,7 @@ router.delete("/users/:id/ping", adminProtect, async (req, res) => {
       userId,
       {
         pingNotification: {
-          isActive: false,
+          isActive: false, 
           message: null,
           createdAt: null,
         },
@@ -700,7 +834,7 @@ router.delete("/users/:id/ping", adminProtect, async (req, res) => {
 });
 
 // Get all users with active ping notifications
-router.get("/users/pinged/list", adminProtect, async (req, res) => {
+router.get("/users/pinged/list", [protect, admin], async (req, res) => {
   try {
     const pingedUsers = await User.find({
       "pingNotification.isActive": true,
@@ -720,7 +854,7 @@ router.get("/users/pinged/list", adminProtect, async (req, res) => {
 });
 
 // Pause user earnings
-router.post("/users/:id/pause-earnings", adminProtect, async (req, res) => {
+router.post("/users/:id/pause-earnings", [protect, admin], async (req, res) => {
   try {
     const userId = req.params.id;
     const adminId = req.admin._id;
@@ -755,40 +889,44 @@ router.post("/users/:id/pause-earnings", adminProtect, async (req, res) => {
 });
 
 // Resume user earnings
-router.post("/users/:id/resume-earnings", adminProtect, async (req, res) => {
-  try {
-    const userId = req.params.id;
+router.post(
+  "/users/:id/resume-earnings",
+  [protect, admin],
+  async (req, res) => {
+    try {
+      const userId = req.params.id;
 
-    const user = await User.findByIdAndUpdate(
-      userId,
-      {
-        earningsPaused: false,
-        earningsPausedAt: null,
-        earningsPausedBy: null,
-      },
-      { new: true }
-    ).select("-password");
+      const user = await User.findByIdAndUpdate(
+        userId,
+        {
+          earningsPaused: false,
+          earningsPausedAt: null,
+          earningsPausedBy: null,
+        },
+        { new: true }
+      ).select("-password");
 
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      res.json({
+        success: true,
+        message: `Earnings resumed for ${user.fullName}`,
+        data: {
+          user: user.fullName,
+          earningsPaused: user.earningsPaused,
+        },
+      });
+    } catch (error) {
+      console.error("Resume earnings error:", error);
+      res.status(500).json({ message: "Server error" });
     }
-
-    res.json({
-      success: true,
-      message: `Earnings resumed for ${user.fullName}`,
-      data: {
-        user: user.fullName,
-        earningsPaused: user.earningsPaused,
-      },
-    });
-  } catch (error) {
-    console.error("Resume earnings error:", error);
-    res.status(500).json({ message: "Server error" });
   }
-});
+);
 
 // Get user financial details (balance, earnings, deposits)
-router.get("/users/:id/financial", adminProtect, async (req, res) => {
+router.get("/users/:id/financial", [protect, admin], async (req, res) => {
   try {
     const userId = req.params.id;
 
@@ -879,7 +1017,7 @@ router.get("/users/:id/financial", adminProtect, async (req, res) => {
 });
 
 // Add to user balance
-router.post("/users/:id/add-balance", adminProtect, async (req, res) => {
+router.post("/users/:id/add-balance", [protect, admin], async (req, res) => {
   try {
     const userId = req.params.id;
     const { amount, reason } = req.body;
@@ -923,6 +1061,24 @@ router.post("/users/:id/add-balance", adminProtect, async (req, res) => {
 
     await transaction.save();
 
+    // Send email notification to user
+    try {
+      const email = emailTemplates.adminAction(
+        user.fullName,
+        "Balance Adjustment",
+        parseFloat(amount),
+        reason
+      );
+      await sendEmail({
+        email: user.email,
+        subject: email.subject,
+        message: email.message,
+        html: email.html,
+      });
+    } catch (emailError) {
+      console.error("Error sending admin action email:", emailError);
+    }
+
     res.json({
       success: true,
       message: `Added $${amount} to ${user.fullName}'s balance`,
@@ -942,7 +1098,7 @@ router.post("/users/:id/add-balance", adminProtect, async (req, res) => {
 });
 
 // Add to user earnings
-router.post("/users/:id/add-earnings", adminProtect, async (req, res) => {
+router.post("/users/:id/add-earnings", [protect, admin], async (req, res) => {
   try {
     const userId = req.params.id;
     const { amount, reason } = req.body;
@@ -986,6 +1142,24 @@ router.post("/users/:id/add-earnings", adminProtect, async (req, res) => {
 
     await transaction.save();
 
+    // Send email notification to user
+    try {
+      const email = emailTemplates.adminAction(
+        user.fullName,
+        "Earnings Adjustment",
+        parseFloat(amount),
+        reason
+      );
+      await sendEmail({
+        email: user.email,
+        subject: email.subject,
+        message: email.message,
+        html: email.html,
+      });
+    } catch (emailError) {
+      console.error("Error sending admin action email:", emailError);
+    }
+
     res.json({
       success: true,
       message: `Added $${amount} to ${user.fullName}'s earnings`,
@@ -1005,7 +1179,7 @@ router.post("/users/:id/add-earnings", adminProtect, async (req, res) => {
 });
 
 // Manual profit calculation endpoint for testing
-router.post("/run-profit-calculation", adminProtect, async (req, res) => {
+router.post("/run-profit-calculation", [protect, admin], async (req, res) => {
   try {
     const calculateDailyProfits = (
       await import("../scripts/calculateProfits.js")

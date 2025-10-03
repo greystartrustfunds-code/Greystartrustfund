@@ -1,6 +1,7 @@
-import { validationResult } from 'express-validator';
-import User from '../models/User.js';
-import generateToken from '../utils/generateToken.js';
+import { validationResult } from "express-validator";
+import User from "../models/User.js";
+import generateToken from "../utils/generateToken.js";
+import sendEmail, { emailTemplates } from "../utils/email.js";
 
 const signup = async (req, res) => {
   try {
@@ -8,8 +9,8 @@ const signup = async (req, res) => {
     if (!errors.isEmpty()) {
       return res.status(400).json({
         success: false,
-        message: 'Validation errors',
-        errors: errors.array()
+        message: "Validation errors",
+        errors: errors.array(),
       });
     }
 
@@ -19,39 +20,53 @@ const signup = async (req, res) => {
     if (userExists) {
       return res.status(400).json({
         success: false,
-        message: 'User with this email already exists'
+        message: "User with this email already exists",
       });
     }
 
     const user = await User.create({
       fullName,
       email,
-      password
+      password,
     });
 
     if (user) {
+      // Send welcome email
+      try {
+        const welcomeEmail = emailTemplates.welcome(user.fullName);
+        await sendEmail({
+          email: user.email,
+          subject: welcomeEmail.subject,
+          message: welcomeEmail.message,
+          html: welcomeEmail.html,
+        });
+      } catch (emailError) {
+        console.error("Error sending welcome email:", emailError);
+        // Don't fail registration if email fails
+      }
+
       res.status(201).json({
         success: true,
-        message: 'User registered successfully',
+        message: "User registered successfully",
         data: {
           _id: user._id,
           fullName: user.fullName,
           email: user.email,
           role: user.role,
-          token: generateToken(user._id)
-        }
+          token: generateToken(user._id),
+        },
       });
     } else {
       res.status(400).json({
         success: false,
-        message: 'Invalid user data'
+        message: "Invalid user data",
       });
     }
   } catch (error) {
-    console.error('Signup error:', error);
+    console.error("Signup error:", error);
     res.status(500).json({
       success: false,
-      message: 'Server error during registration'
+      message: "Server error during registration",
     });
   }
 };
@@ -62,8 +77,8 @@ const login = async (req, res) => {
     if (!errors.isEmpty()) {
       return res.status(400).json({
         success: false,
-        message: 'Validation errors',
-        errors: errors.array()
+        message: "Validation errors",
+        errors: errors.array(),
       });
     }
 
@@ -74,50 +89,50 @@ const login = async (req, res) => {
     if (user && (await user.matchPassword(password))) {
       res.json({
         success: true,
-        message: 'Login successful',
+        message: "Login successful",
         data: {
           _id: user._id,
           fullName: user.fullName,
           email: user.email,
           role: user.role,
-          token: generateToken(user._id)
-        }
+          token: generateToken(user._id),
+        },
       });
     } else {
       res.status(401).json({
         success: false,
-        message: 'Invalid email or password'
+        message: "Invalid email or password",
       });
     }
   } catch (error) {
-    console.error('Login error:', error);
+    console.error("Login error:", error);
     res.status(500).json({
       success: false,
-      message: 'Server error during login'
+      message: "Server error during login",
     });
   }
 };
 
 const getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).select('-password');
-    
+    const user = await User.findById(req.user._id).select("-password");
+
     if (user) {
       res.json({
         success: true,
-        data: user
+        data: user,
       });
     } else {
       res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: "User not found",
       });
     }
   } catch (error) {
-    console.error('Get profile error:', error);
+    console.error("Get profile error:", error);
     res.status(500).json({
       success: false,
-      message: 'Server error'
+      message: "Server error",
     });
   }
 };
@@ -127,15 +142,19 @@ const getProfile = async (req, res) => {
 // @access  Private/Admin
 const getTotalUsers = async (req, res) => {
   try {
-    if (req.user && req.user.role === 'admin') {
+    if (req.user && req.user.role === "admin") {
       const userCount = await User.countDocuments({});
       res.status(200).json({ success: true, count: userCount });
     } else {
-      res.status(403).json({ success: false, message: 'Not authorized as an admin' });
+      res
+        .status(403)
+        .json({ success: false, message: "Not authorized as an admin" });
     }
   } catch (error) {
-    console.error('Get total users error:', error);
-    res.status(500).json({ success: false, message: 'Server error fetching user count' });
+    console.error("Get total users error:", error);
+    res
+      .status(500)
+      .json({ success: false, message: "Server error fetching user count" });
   }
 };
 

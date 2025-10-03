@@ -5,6 +5,7 @@ import Plan from "../models/Plan.js";
 import Transaction from "../models/Transaction.js";
 import Chat from "../models/Chat.js";
 import { v2 as cloudinary } from "cloudinary";
+import sendEmail, { emailTemplates } from "../utils/email.js";
 
 const router = express.Router();
 
@@ -424,31 +425,88 @@ router.post("/transactions", authenticateToken, async (req, res) => {
   try {
     console.log("Create transaction request:", req.body);
 
+    // Map frontend account IDs to backend payment methods
+    const paymentMethodMap = {
+      usdt_trc20: "usdt",
+      tron_trc20: "tron",
+      bnb_bep20: "bep20",
+      btc_bitcoin: "bitcoin",
+      eth_ethereum: "usdc", // Map ETH to USDC as closest match
+    };
+
     // If it's form data, handle differently
     let transactionData;
     if (req.body instanceof FormData || req.body.proofOfPayment) {
       // Handle FormData from dashboard deposit modal
       const { amount, type, selectedAccount, status } = req.body;
 
+      const mappedPaymentMethod =
+        paymentMethodMap[selectedAccount] || selectedAccount;
+
       transactionData = new Transaction({
         userId: req.user._id,
         type: type || "deposit",
         amount: parseFloat(amount),
-        paymentMethod: selectedAccount,
+        paymentMethod: mappedPaymentMethod,
         selectedAccount: selectedAccount,
         status: status || "pending",
+        planId: "basic", // Default plan for deposits - this can be made dynamic later
         // Note: File upload handling would need to be implemented here
         // For now, just create the transaction without the file
       });
     } else {
       // Handle regular JSON data
+      const { selectedAccount, ...otherData } = req.body;
+      const mappedPaymentMethod =
+        paymentMethodMap[selectedAccount] || selectedAccount;
+
       transactionData = new Transaction({
-        ...req.body,
+        ...otherData,
         userId: req.user._id,
+        paymentMethod: mappedPaymentMethod,
+        selectedAccount: selectedAccount,
+        planId: req.body.planId || "basic", // Default plan if not provided
       });
     }
 
     await transactionData.save();
+
+    // Send email notification for transactions
+    if (transactionData.type === "deposit") {
+      try {
+        const email = emailTemplates.transactionUpdate(
+          req.user.fullName,
+          "Deposit",
+          transactionData.amount,
+          "pending",
+          "Your deposit has been received and is pending verification."
+        );
+        await sendEmail({
+          email: req.user.email,
+          subject: email.subject,
+          message: email.message,
+          html: email.html,
+        });
+      } catch (emailError) {
+        console.error("Error sending deposit email:", emailError);
+      }
+    } else if (transactionData.type === "withdrawal") {
+      try {
+        const email = emailTemplates.withdrawalRequest(
+          req.user.fullName,
+          transactionData.amount,
+          transactionData.paymentMethod || "Not specified"
+        );
+        await sendEmail({
+          email: req.user.email,
+          subject: email.subject,
+          message: email.message,
+          html: email.html,
+        });
+      } catch (emailError) {
+        console.error("Error sending withdrawal email:", emailError);
+      }
+    }
 
     res.json({
       success: true,
@@ -810,6 +868,23 @@ router.post("/reinvest", authenticateToken, async (req, res) => {
     await User.findByIdAndUpdate(req.user._id, {
       $inc: { totalEarnings: -amount },
     });
+
+    // Send email notification
+    const message = `Dear ${user.fullName},
+
+Your reinvestment of $${amount} into the ${selectedPlan.name} has been successfully processed.
+
+Thank you for choosing Greystar Trust Fund.`;
+
+    try {
+      await sendEmail({
+        email: user.email,
+        subject: "Reinvestment Successful",
+        message,
+      });
+    } catch (emailError) {
+      console.error("Error sending email:", emailError);
+    }
 
     res.json({
       success: true,

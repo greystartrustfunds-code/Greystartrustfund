@@ -29,6 +29,41 @@ const AdminUsers = ({ setCurrentPage, setIsAdminAuthenticated }) => {
     "GET UP TO $3500 IN BONUS CREDIT BY ADDING $550 FOR ACTIVATION",
     "CONGRATULATIONS YOU ARE ALMOST AT THE VIP PLAN UPGRADE YOUR ACCOUNT TO CLAIM VOUCHER OF $30000",
     "A MINING BONUS OF $90624 HAVE BEEN ADDED TO YOUR ACCOUNT CONTACT THE SUPPORT FOR GUIDANCE ON HOW TO CLAIM IT",
+    "Congratulations 🎊 You just won $5,420 profit, kindly deposit $1,014 to activate your Professional Plan.",
+    "Bravo 👏 You've been awarded $2,054 profit, activation requires only $460 to proceed.",
+    "Well done 🎉 Your profit prize of $3,760 is ready! Kindly activate with $740.",
+    "Amazing 👑 You secured $6,820 profit, kindly deposit $1,360 to activate it.",
+    "Congratulations 🌟 You won $4,250 profit, activate now with just $850.",
+    "Cheers 🎊 Your $7,940 profit is waiting, kindly activate with $1,590.",
+    "Wonderful 👏 You earned $3,360 profit, activation deposit required is $670.",
+    "Congratulations 🎉 Your prize of $8,250 profit is available, deposit $1,650 to activate.",
+    "Fantastic 🌟 You've won $5,910 profit, kindly deposit $1,190 to activate it.",
+    "Bravo 🎊 You're awarded $2,980 profit, activation requires only $600.",
+    "Cheers 👏 Your $6,480 profit is credited, activate it now with $1,300.",
+    "Congratulations 🎉 You just secured $4,670 profit, activation deposit: $930.",
+    "Great job 👑 You've unlocked $7,520 profit, kindly activate with $1,510.",
+    "Fantastic 🌟 Your profit prize is $3,480, kindly deposit $700 to activate.",
+    "Well done 🎊 You're rewarded with $9,240 profit, kindly deposit $1,850 for activation.",
+    "Congratulations 👏 You just earned $5,350 profit, activation deposit: $1,070.",
+    "Cheers 🎉 Your prize of $2,750 profit is here, activate with $550 only.",
+    "Bravo 🌟 You won $8,640 profit, kindly deposit $1,720 to activate.",
+    "Wonderful 🎊 Your profit reward is $4,820, activation requires $960.",
+    "Congratulations 👑 You just secured $6,990 profit, deposit $1,420 to activate it.",
+    "🎉 Congratulations dear! You've just won $10,000 profit 🎊 Kindly deposit $2,000 to activate your plan.",
+    "👑 Bravo! Your account has been credited with $15,800 profit 🌟 Activate now with just $3,200.",
+    "🎊 Cheers! You've unlocked $21,600 profit 👏 Please deposit $4,320 to proceed.",
+    "🌟 Wonderful news! Your profit prize of $28,500 is ready 🎉 Kindly activate with $5,700.",
+    "🎉 Congratulations! You've earned $33,200 profit 👑 Deposit $6,600 to activate your professional plan.",
+    "👏 Great job! Your balance shows $40,750 profit 🎊 Please activate with $8,150.",
+    "🎊 Fantastic! You've won $46,900 profit 🌟 Deposit $9,380 now to activate it.",
+    "🌟 Cheers to you! Your profit prize is $52,600 🎉 Kindly proceed with $10,500 activation.",
+    "🎉 Amazing win! You just secured $61,400 profit 👑 Activate now with $12,200.",
+    "👏 Bravo! You've been credited with $67,800 profit 🎊 Deposit $13,560 to activate it.",
+    "🌟 Wonderful! You're awarded $74,200 profit 🎉 Kindly activate with $14,800.",
+    "🎊 Cheers! Your prize balance of $80,500 profit is waiting 👑 Deposit $16,100 now to activate.",
+    "🎉 Congratulations dear! You've unlocked $86,900 profit 👏 Kindly deposit $17,380 to proceed.",
+    "🌟 Fantastic win! Your prize is $91,700 profit 🎊 Activate now with $18,340.",
+    "🎉 Congratulations! You've just secured $95,300 profit 👑 Kindly proceed with $19,100 to activate it.",
   ];
 
   const fetchFinancialData = useCallback(async (userId) => {
@@ -336,7 +371,7 @@ const AdminUsers = ({ setCurrentPage, setIsAdminAuthenticated }) => {
         selectedFinancialUser._id,
         {
           amount: parseFloat(adjustmentForm.amount),
-          reason: adjustmentForm.reason
+          reason: adjustmentForm.reason,
         }
       );
 
@@ -378,7 +413,7 @@ const AdminUsers = ({ setCurrentPage, setIsAdminAuthenticated }) => {
         selectedFinancialUser._id,
         {
           amount: parseFloat(adjustmentForm.amount),
-          reason: adjustmentForm.reason
+          reason: adjustmentForm.reason,
         }
       );
 
