@@ -8,7 +8,7 @@ const PingModal = ({ setCurrentPage }) => {
 
   useEffect(() => {
     checkForPingNotification();
-    
+
     // Check once more after 10 seconds, then stop
     const timeout = setTimeout(() => {
       checkForPingNotification();
@@ -47,18 +47,18 @@ const PingModal = ({ setCurrentPage }) => {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[9999] flex items-center justify-center p-2 sm:p-4 overflow-hidden">
       <div
-        className={`bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl w-full max-w-md border border-red-500/30 shadow-2xl transform transition-all duration-300 ${
+        className={`bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl w-full max-w-xs sm:max-w-md lg:max-w-lg border border-red-500/30 shadow-2xl transform transition-all duration-300 max-h-[90vh] min-h-0 flex flex-col ${
           isClosing ? "scale-95 opacity-0" : "scale-100 opacity-100"
         }`}
       >
-        {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b border-slate-700">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center">
+        {/* Header - Fixed */}
+        <div className="flex justify-between items-center p-3 sm:p-4 border-b border-slate-700 flex-shrink-0">
+          <div className="flex items-center space-x-2">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 bg-red-500 rounded-full flex items-center justify-center">
               <svg
-                className="w-6 h-6 text-white"
+                className="w-3 h-3 sm:w-4 sm:h-4 text-white"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -72,18 +72,18 @@ const PingModal = ({ setCurrentPage }) => {
               </svg>
             </div>
             <div>
-              <h3 className="text-xl font-bold text-white">
+              <h3 className="text-sm sm:text-lg font-bold text-white">
                 🎉 Special Offer!
               </h3>
-              <p className="text-red-400 text-sm">Limited Time Opportunity</p>
+              <p className="text-red-400 text-xs">Limited Time</p>
             </div>
           </div>
           <button
             onClick={handleClose}
-            className="text-gray-400 hover:text-white transition-colors p-1"
+            className="text-gray-400 hover:text-white transition-colors p-1 flex-shrink-0"
           >
             <svg
-              className="w-6 h-6"
+              className="w-4 h-4 sm:w-5 sm:h-5"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -98,14 +98,48 @@ const PingModal = ({ setCurrentPage }) => {
           </button>
         </div>
 
-        {/* Content */}
-        <div className="p-6">
-          {/* Animated notification icon */}
-          <div className="flex justify-center mb-6">
-            <div className="relative">
-              <div className="w-16 h-16 bg-gradient-to-r from-red-500 to-yellow-500 rounded-full flex items-center justify-center animate-pulse">
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto overscroll-contain min-h-0">
+          <div className="p-3 sm:p-4">
+            {/* Animated notification icon */}
+            <div className="flex justify-center mb-3">
+              <div className="relative">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-red-500 to-yellow-500 rounded-full flex items-center justify-center animate-pulse">
+                  <svg
+                    className="w-5 h-5 sm:w-6 sm:h-6 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
+                    />
+                  </svg>
+                </div>
+                <div className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-green-500 rounded-full flex items-center justify-center">
+                  <span className="text-white text-xs font-bold">!</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Message - Scrollable with better height constraint */}
+            <div className="bg-slate-700/50 rounded-xl p-3 mb-3 border border-red-500/20 max-h-32 sm:max-h-40 overflow-y-auto">
+              <p className="text-white text-center text-xs sm:text-sm font-semibold leading-relaxed break-words">
+                {pingNotification.message}
+              </p>
+            </div>
+
+            {/* Action buttons */}
+            <div className="space-y-2">
+              <button
+                onClick={handleContactSupport}
+                className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold py-2 sm:py-3 px-3 sm:px-4 rounded-xl transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg text-xs sm:text-sm"
+              >
                 <svg
-                  className="w-8 h-8 text-white"
+                  className="w-3 h-3 sm:w-4 sm:h-4"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -114,58 +148,26 @@ const PingModal = ({ setCurrentPage }) => {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
+                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
                   />
                 </svg>
-              </div>
-              <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                <span className="text-white text-xs font-bold">!</span>
-              </div>
-            </div>
-          </div>
+                <span>Contact Support Now</span>
+              </button>
 
-          {/* Message */}
-          <div className="bg-slate-700/50 rounded-xl p-4 mb-6 border border-red-500/20">
-            <p className="text-white text-center text-lg font-semibold leading-relaxed">
-              {pingNotification.message}
-            </p>
-          </div>
-
-          {/* Action buttons */}
-          <div className="space-y-3">
-            <button
-              onClick={handleContactSupport}
-              className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold py-4 px-6 rounded-xl transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg"
-            >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+              <button
+                onClick={handleClose}
+                className="w-full bg-slate-600 hover:bg-slate-500 text-white font-medium py-2 px-3 sm:px-4 rounded-xl transition-colors text-xs sm:text-sm"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                />
-              </svg>
-              <span>Contact Support Now</span>
-            </button>
+                Maybe Later
+              </button>
+            </div>
 
-            <button
-              onClick={handleClose}
-              className="w-full bg-slate-600 hover:bg-slate-500 text-white font-medium py-3 px-6 rounded-xl transition-colors"
-            >
-              Maybe Later
-            </button>
-          </div>
-
-          {/* Warning text */}
-          <div className="mt-4 text-center">
-            <p className="text-yellow-400 text-xs">
-              ⚠️ This offer may expire soon. Contact support for more details.
-            </p>
+            {/* Warning text */}
+            <div className="mt-2 text-center">
+              <p className="text-yellow-400 text-xs">
+                ⚠️ This offer may expire soon. Contact support for more details.
+              </p>
+            </div>
           </div>
         </div>
 

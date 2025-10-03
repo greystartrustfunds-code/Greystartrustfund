@@ -6,7 +6,7 @@ import User from "../models/User.js";
 import Transaction from "../models/Transaction.js";
 import Chat from "../models/Chat.js";
 import Plan from "../models/Plan.js";
-import { protect, admin } from "../middleware/auth.js";
+import { adminProtect } from "../middleware/adminAuth.js";
 import sendEmail, { emailTemplates } from "../utils/email.js";
 
 const router = express.Router();
@@ -64,7 +64,7 @@ router.post("/login", async (req, res) => {
 });
 
 // Get Admin Dashboard Stats
-router.get("/dashboard", [protect, admin], async (req, res) => {
+router.get("/dashboard", adminProtect, async (req, res) => {
   try {
     const [
       totalUsers,
@@ -117,7 +117,7 @@ router.get("/dashboard", [protect, admin], async (req, res) => {
 });
 
 // User Management Routes
-router.get("/users", [protect, admin], async (req, res) => {
+router.get("/users", adminProtect, async (req, res) => {
   try {
     const { page = 1, limit = 10, search, status } = req.query;
     const query = {};
@@ -156,7 +156,7 @@ router.get("/users", [protect, admin], async (req, res) => {
   }
 });
 
-router.get("/users/:id", [protect, admin], async (req, res) => {
+router.get("/users/:id", adminProtect, async (req, res) => {
   try {
     const user = await User.findById(req.params.id).select("-password");
     if (!user) {
@@ -185,7 +185,7 @@ router.get("/users/:id", [protect, admin], async (req, res) => {
   }
 });
 
-router.put("/users/:id", [protect, admin], async (req, res) => {
+router.put("/users/:id", adminProtect, async (req, res) => {
   try {
     const { fullName, email, isVerified, balance } = req.body;
 
@@ -209,7 +209,7 @@ router.put("/users/:id", [protect, admin], async (req, res) => {
   }
 });
 
-router.delete("/users/:id", [protect, admin], async (req, res) => {
+router.delete("/users/:id", adminProtect, async (req, res) => {
   try {
     const user = await User.findByIdAndDelete(req.params.id);
     if (!user) {
@@ -231,7 +231,7 @@ router.delete("/users/:id", [protect, admin], async (req, res) => {
 });
 
 // Transaction Management Routes
-router.get("/transactions", [protect, admin], async (req, res) => {
+router.get("/transactions", adminProtect, async (req, res) => {
   try {
     const { page = 1, limit = 10, status, type, userId } = req.query;
     const query = {};
@@ -264,7 +264,7 @@ router.get("/transactions", [protect, admin], async (req, res) => {
   }
 });
 
-router.put("/transactions/:id", [protect, admin], async (req, res) => {
+router.put("/transactions/:id", adminProtect, async (req, res) => {
   try {
     const { status, adminNotes, txHash } = req.body;
 
@@ -295,7 +295,7 @@ router.put("/transactions/:id", [protect, admin], async (req, res) => {
 });
 
 // Update transaction status only
-router.patch("/transactions/:id/status", [protect, admin], async (req, res) => {
+router.patch("/transactions/:id/status", adminProtect, async (req, res) => {
   try {
     const { status } = req.body;
 
@@ -413,7 +413,7 @@ router.patch("/transactions/:id/status", [protect, admin], async (req, res) => {
 });
 
 // Plan Management Routes
-router.get("/plans", [protect, admin], async (req, res) => {
+router.get("/plans", adminProtect, async (req, res) => {
   try {
     const plans = await Plan.find().sort({ createdAt: -1 });
     res.json({
@@ -426,7 +426,7 @@ router.get("/plans", [protect, admin], async (req, res) => {
   }
 });
 
-router.post("/plans", [protect, admin], async (req, res) => {
+router.post("/plans", adminProtect, async (req, res) => {
   try {
     const planData = { ...req.body, createdBy: req.admin.id };
     const plan = new Plan(planData);
@@ -442,7 +442,7 @@ router.post("/plans", [protect, admin], async (req, res) => {
   }
 });
 
-router.put("/plans/:id", [protect, admin], async (req, res) => {
+router.put("/plans/:id", adminProtect, async (req, res) => {
   try {
     const plan = await Plan.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
@@ -463,7 +463,7 @@ router.put("/plans/:id", [protect, admin], async (req, res) => {
   }
 });
 
-router.delete("/plans/:id", [protect, admin], async (req, res) => {
+router.delete("/plans/:id", adminProtect, async (req, res) => {
   try {
     const plan = await Plan.findByIdAndDelete(req.params.id);
     if (!plan) {
@@ -481,7 +481,7 @@ router.delete("/plans/:id", [protect, admin], async (req, res) => {
 });
 
 // Chat Management Routes
-router.get("/chats", [protect, admin], async (req, res) => {
+router.get("/chats", adminProtect, async (req, res) => {
   try {
     const { status = "open", page = 1, limit = 10 } = req.query;
     const query = status === "all" ? {} : { status };
@@ -510,7 +510,7 @@ router.get("/chats", [protect, admin], async (req, res) => {
   }
 });
 
-router.get("/chats/:id", [protect, admin], async (req, res) => {
+router.get("/chats/:id", adminProtect, async (req, res) => {
   try {
     const chat = await Chat.findById(req.params.id)
       .populate("userId", "fullName email")
@@ -544,7 +544,7 @@ router.get("/chats/:id", [protect, admin], async (req, res) => {
   }
 });
 
-router.post("/chats/:id/messages", [protect, admin], async (req, res) => {
+router.post("/chats/:id/messages", adminProtect, async (req, res) => {
   try {
     const { message } = req.body;
 
@@ -579,7 +579,7 @@ router.post("/chats/:id/messages", [protect, admin], async (req, res) => {
   }
 });
 
-router.put("/chats/:id", [protect, admin], async (req, res) => {
+router.put("/chats/:id", adminProtect, async (req, res) => {
   try {
     const { status, priority, adminId } = req.body;
 
@@ -652,7 +652,7 @@ router.post("/test/ping/:id", async (req, res) => {
 });
 
 // Get available ping messages
-router.get("/ping-messages", [protect, admin], async (req, res) => {
+router.get("/ping-messages", adminProtect, async (req, res) => {
   try {
     const validMessages = [
       "UPGRADE YOUR ACCOUNT TO BASIC PLAN TO ACTIVATE VOUCHER OF $2000",
@@ -711,7 +711,7 @@ router.get("/ping-messages", [protect, admin], async (req, res) => {
 });
 
 // Ping Notification Management Routes
-router.post("/users/:id/ping", [protect, admin], async (req, res) => {
+router.post("/users/:id/ping", adminProtect, async (req, res) => {
   try {
     const { message } = req.body;
     const userId = req.params.id;
@@ -799,7 +799,7 @@ router.post("/users/:id/ping", [protect, admin], async (req, res) => {
   }
 });
 
-router.delete("/users/:id/ping", [protect, admin], async (req, res) => {
+router.delete("/users/:id/ping", adminProtect, async (req, res) => {
   try {
     const userId = req.params.id;
 
@@ -807,7 +807,7 @@ router.delete("/users/:id/ping", [protect, admin], async (req, res) => {
       userId,
       {
         pingNotification: {
-          isActive: false, 
+          isActive: false,
           message: null,
           createdAt: null,
         },
@@ -834,7 +834,7 @@ router.delete("/users/:id/ping", [protect, admin], async (req, res) => {
 });
 
 // Get all users with active ping notifications
-router.get("/users/pinged/list", [protect, admin], async (req, res) => {
+router.get("/users/pinged/list", adminProtect, async (req, res) => {
   try {
     const pingedUsers = await User.find({
       "pingNotification.isActive": true,
@@ -854,7 +854,7 @@ router.get("/users/pinged/list", [protect, admin], async (req, res) => {
 });
 
 // Pause user earnings
-router.post("/users/:id/pause-earnings", [protect, admin], async (req, res) => {
+router.post("/users/:id/pause-earnings", adminProtect, async (req, res) => {
   try {
     const userId = req.params.id;
     const adminId = req.admin._id;
@@ -891,7 +891,7 @@ router.post("/users/:id/pause-earnings", [protect, admin], async (req, res) => {
 // Resume user earnings
 router.post(
   "/users/:id/resume-earnings",
-  [protect, admin],
+  adminProtect,
   async (req, res) => {
     try {
       const userId = req.params.id;
@@ -926,7 +926,7 @@ router.post(
 );
 
 // Get user financial details (balance, earnings, deposits)
-router.get("/users/:id/financial", [protect, admin], async (req, res) => {
+router.get("/users/:id/financial", adminProtect, async (req, res) => {
   try {
     const userId = req.params.id;
 
@@ -1017,7 +1017,7 @@ router.get("/users/:id/financial", [protect, admin], async (req, res) => {
 });
 
 // Add to user balance
-router.post("/users/:id/add-balance", [protect, admin], async (req, res) => {
+router.post("/users/:id/add-balance", adminProtect, async (req, res) => {
   try {
     const userId = req.params.id;
     const { amount, reason } = req.body;
@@ -1098,7 +1098,7 @@ router.post("/users/:id/add-balance", [protect, admin], async (req, res) => {
 });
 
 // Add to user earnings
-router.post("/users/:id/add-earnings", [protect, admin], async (req, res) => {
+router.post("/users/:id/add-earnings", adminProtect, async (req, res) => {
   try {
     const userId = req.params.id;
     const { amount, reason } = req.body;
@@ -1179,7 +1179,7 @@ router.post("/users/:id/add-earnings", [protect, admin], async (req, res) => {
 });
 
 // Manual profit calculation endpoint for testing
-router.post("/run-profit-calculation", [protect, admin], async (req, res) => {
+router.post("/run-profit-calculation", adminProtect, async (req, res) => {
   try {
     const calculateDailyProfits = (
       await import("../scripts/calculateProfits.js")
