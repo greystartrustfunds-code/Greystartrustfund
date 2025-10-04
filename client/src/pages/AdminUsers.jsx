@@ -1341,13 +1341,13 @@ const AdminUsers = ({ setCurrentPage, setIsAdminAuthenticated }) => {
       {/* Ping Modal */}
       {showPingModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-800 rounded-2xl w-full max-w-md border border-red-500/30 shadow-2xl">
-            {/* Header */}
-            <div className="flex justify-between items-center p-6 border-b border-slate-700">
+          <div className="bg-slate-800 rounded-2xl w-full max-w-md max-h-[90vh] border border-red-500/30 shadow-2xl flex flex-col">
+            {/* Header - Fixed */}
+            <div className="flex justify-between items-center p-4 sm:p-6 border-b border-slate-700 flex-shrink-0">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-yellow-500 rounded-full flex items-center justify-center">
                   <svg
-                    className="w-6 h-6 text-white"
+                    className="w-5 h-5 sm:w-6 sm:h-6 text-white"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -1361,10 +1361,10 @@ const AdminUsers = ({ setCurrentPage, setIsAdminAuthenticated }) => {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-white">
+                  <h3 className="text-lg sm:text-xl font-bold text-white">
                     Send Ping Notification
                   </h3>
-                  <p className="text-gray-400 text-sm">
+                  <p className="text-gray-400 text-xs sm:text-sm">
                     To: {selectedPingUser?.fullName || selectedPingUser?.name}
                   </p>
                 </div>
@@ -1374,10 +1374,10 @@ const AdminUsers = ({ setCurrentPage, setIsAdminAuthenticated }) => {
                   setShowPingModal(false);
                   setSelectedPingMessage("");
                 }}
-                className="text-gray-400 hover:text-white transition-colors p-1"
+                className="text-gray-400 hover:text-white transition-colors p-1 flex-shrink-0"
               >
                 <svg
-                  className="w-6 h-6"
+                  className="w-5 h-5 sm:w-6 sm:h-6"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -1392,17 +1392,17 @@ const AdminUsers = ({ setCurrentPage, setIsAdminAuthenticated }) => {
               </button>
             </div>
 
-            {/* Content */}
-            <div className="p-6">
-              <div className="mb-6">
-                <label className="block text-white font-medium mb-3">
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 min-h-0">
+              <div className="mb-4">
+                <label className="block text-white font-medium mb-3 text-sm sm:text-base">
                   Select promotional message:
                 </label>
-                <div className="space-y-3">
+                <div className="space-y-2 sm:space-y-3">
                   {pingMessages.map((message, index) => (
                     <label
                       key={index}
-                      className="flex items-start space-x-3 p-3 bg-slate-700/50 rounded-lg cursor-pointer hover:bg-slate-700 transition-colors"
+                      className="flex items-start space-x-2 sm:space-x-3 p-2 sm:p-3 bg-slate-700/50 rounded-lg cursor-pointer hover:bg-slate-700 transition-colors"
                     >
                       <input
                         type="radio"
@@ -1410,34 +1410,37 @@ const AdminUsers = ({ setCurrentPage, setIsAdminAuthenticated }) => {
                         value={message}
                         checked={selectedPingMessage === message}
                         onChange={(e) => setSelectedPingMessage(e.target.value)}
-                        className="mt-1 text-red-500 focus:ring-red-500"
+                        className="mt-1 text-red-500 focus:ring-red-500 flex-shrink-0"
                       />
-                      <span className="text-gray-200 text-sm leading-relaxed">
+                      <span className="text-gray-200 text-xs sm:text-sm leading-relaxed">
                         {message}
                       </span>
                     </label>
                   ))}
                 </div>
               </div>
+            </div>
 
+            {/* Footer - Fixed */}
+            <div className="p-4 sm:p-6 border-t border-slate-700 flex-shrink-0">
               {/* Action buttons */}
-              <div className="flex space-x-3">
+              <div className="flex space-x-2 sm:space-x-3 mb-3 sm:mb-4">
                 <button
                   onClick={() => {
                     setShowPingModal(false);
                     setSelectedPingMessage("");
                   }}
-                  className="flex-1 bg-slate-600 hover:bg-slate-500 text-white font-medium py-3 px-6 rounded-xl transition-colors"
+                  className="flex-1 bg-slate-600 hover:bg-slate-500 text-white font-medium py-2 sm:py-3 px-4 sm:px-6 rounded-xl transition-colors text-sm sm:text-base"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSendPing}
                   disabled={!selectedPingMessage}
-                  className="flex-1 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-6 rounded-xl transition-all duration-200 flex items-center justify-center space-x-2"
+                  className="flex-1 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-2 sm:py-3 px-4 sm:px-6 rounded-xl transition-all duration-200 flex items-center justify-center space-x-2 text-sm sm:text-base"
                 >
                   <svg
-                    className="w-5 h-5"
+                    className="w-4 h-4 sm:w-5 sm:h-5"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -1454,7 +1457,7 @@ const AdminUsers = ({ setCurrentPage, setIsAdminAuthenticated }) => {
               </div>
 
               {/* Warning */}
-              <div className="mt-4 p-3 bg-yellow-900/20 border border-yellow-500/30 rounded-lg">
+              <div className="p-2 sm:p-3 bg-yellow-900/20 border border-yellow-500/30 rounded-lg">
                 <p className="text-yellow-400 text-xs">
                   ⚠️ This will show a persistent promotional modal to the user
                   until they dismiss it. The modal will reappear on page reload.
