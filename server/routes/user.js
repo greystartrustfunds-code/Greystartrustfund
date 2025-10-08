@@ -184,6 +184,7 @@ router.get("/dashboard", authenticateToken, async (req, res) => {
       data: {
         balance: calculatedBalance,
         earnings: user.totalEarnings || 0,
+        withdrawableEarnings: user.withdrawableEarnings || 0,
         activeDeposit: activeDepositAmount,
         totalDeposit: totalDepositAmount,
         totalWithdraws: withdrawalTotal,
@@ -664,12 +665,20 @@ router.get("/chat/unread-count", authenticateToken, async (req, res) => {
 router.post("/withdraw", authenticateToken, async (req, res) => {
   try {
     console.log("Withdraw endpoint hit - body:", req.body);
-    const { amount, accountType, accountDetails } = req.body;
+    const { amount, withdrawalSource, accountType, accountDetails } = req.body;
 
     // Validate required fields
-    if (!amount || !accountType || !accountDetails) {
+    if (!amount || !withdrawalSource || !accountType || !accountDetails) {
       return res.status(400).json({
-        message: "All fields are required: amount, accountType, accountDetails",
+        message:
+          "All fields are required: amount, withdrawalSource, accountType, accountDetails",
+      });
+    }
+
+    // Validate withdrawal source
+    if (!["balance", "earnings"].includes(withdrawalSource)) {
+      return res.status(400).json({
+        message: "Invalid withdrawal source. Must be 'balance' or 'earnings'",
       });
     }
 
@@ -679,16 +688,37 @@ router.post("/withdraw", authenticateToken, async (req, res) => {
       return res.status(400).json({ message: "Amount must be greater than 0" });
     }
 
-    // Get user's current balance
+    // Get user's current balance and earnings
     const user = await User.findById(req.user._id);
     console.log("Withdraw - user lookup:", {
       userId: req.user._id,
       balance: user?.balance,
+      withdrawableEarnings: user?.withdrawableEarnings,
+      withdrawalSource,
     });
-    if (withdrawalAmount > user.balance) {
-      return res
-        .status(400)
-        .json({ message: "Insufficient balance for withdrawal" });
+
+    // Validate sufficient funds based on withdrawal source
+    if (withdrawalSource === "balance") {
+      if (withdrawalAmount > user.balance) {
+        return res
+          .status(400)
+          .json({ message: "Insufficient balance for withdrawal" });
+      }
+    } else if (withdrawalSource === "earnings") {
+      if (!user.withdrawableEarnings || user.withdrawableEarnings <= 0) {
+        return res
+          .status(400)
+          .json({
+            message: "No earnings are currently approved for withdrawal",
+          });
+      }
+      if (withdrawalAmount > user.withdrawableEarnings) {
+        return res
+          .status(400)
+          .json({
+            message: "Insufficient withdrawable earnings for withdrawal",
+          });
+      }
     }
 
     // Validate account details based on type
@@ -724,6 +754,9 @@ router.post("/withdraw", authenticateToken, async (req, res) => {
       status: "pending",
       accountType: accountType,
       accountDetails: accountDetails,
+      description: `Withdrawal from ${
+        withdrawalSource === "balance" ? "account balance" : "approved earnings"
+      }`,
       // Store account details in paymentMethod for compatibility
       paymentMethod: `${accountType}_withdrawal`,
     });
@@ -857,6 +890,7 @@ router.post("/reinvest", authenticateToken, async (req, res) => {
       amount: amount,
       planId: planId,
       planName: selectedPlan.name,
+      paymentMethod: "bitcoin", // Default payment method for reinvestment deposits
       status: "confirmed", // Auto-confirm since it's from earnings
       maturityDate: maturityDate,
       description: `Reinvestment deposit - ${selectedPlan.name}`,

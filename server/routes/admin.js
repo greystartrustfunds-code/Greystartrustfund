@@ -889,41 +889,37 @@ router.post("/users/:id/pause-earnings", adminProtect, async (req, res) => {
 });
 
 // Resume user earnings
-router.post(
-  "/users/:id/resume-earnings",
-  adminProtect,
-  async (req, res) => {
-    try {
-      const userId = req.params.id;
+router.post("/users/:id/resume-earnings", adminProtect, async (req, res) => {
+  try {
+    const userId = req.params.id;
 
-      const user = await User.findByIdAndUpdate(
-        userId,
-        {
-          earningsPaused: false,
-          earningsPausedAt: null,
-          earningsPausedBy: null,
-        },
-        { new: true }
-      ).select("-password");
+    const user = await User.findByIdAndUpdate(
+      userId,
+      {
+        earningsPaused: false,
+        earningsPausedAt: null,
+        earningsPausedBy: null,
+      },
+      { new: true }
+    ).select("-password");
 
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-
-      res.json({
-        success: true,
-        message: `Earnings resumed for ${user.fullName}`,
-        data: {
-          user: user.fullName,
-          earningsPaused: user.earningsPaused,
-        },
-      });
-    } catch (error) {
-      console.error("Resume earnings error:", error);
-      res.status(500).json({ message: "Server error" });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
     }
+
+    res.json({
+      success: true,
+      message: `Earnings resumed for ${user.fullName}`,
+      data: {
+        user: user.fullName,
+        earningsPaused: user.earningsPaused,
+      },
+    });
+  } catch (error) {
+    console.error("Resume earnings error:", error);
+    res.status(500).json({ message: "Server error" });
   }
-);
+});
 
 // Get user financial details (balance, earnings, deposits)
 router.get("/users/:id/financial", adminProtect, async (req, res) => {
@@ -1177,6 +1173,85 @@ router.post("/users/:id/add-earnings", adminProtect, async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
+// Set withdrawable earnings for user
+router.post(
+  "/users/:userId/withdrawable-earnings",
+  adminProtect,
+  async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const { amount, reason } = req.body;
+
+      if (!amount || !reason) {
+        return res
+          .status(400)
+          .json({ message: "Amount and reason are required" });
+      }
+
+      // Validate user exists
+      const user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const oldWithdrawableEarnings = user.withdrawableEarnings || 0;
+      const newWithdrawableEarnings = Math.max(0, parseFloat(amount)); // Ensure non-negative
+
+      // Validate that withdrawable earnings don't exceed total earnings
+      if (newWithdrawableEarnings > user.totalEarnings) {
+        return res.status(400).json({
+          message: "Withdrawable earnings cannot exceed total earnings",
+          totalEarnings: user.totalEarnings,
+          requestedAmount: newWithdrawableEarnings,
+        });
+      }
+
+      // Update user withdrawable earnings
+      await User.findByIdAndUpdate(userId, {
+        withdrawableEarnings: newWithdrawableEarnings,
+      });
+
+      // Send email notification to user
+      try {
+        const email = emailTemplates.adminAction(
+          user.fullName,
+          "Withdrawable Earnings Update",
+          newWithdrawableEarnings,
+          reason
+        );
+        await sendEmail({
+          email: user.email,
+          subject: email.subject,
+          message: email.message,
+          html: email.html,
+        });
+      } catch (emailError) {
+        console.error(
+          "Error sending withdrawable earnings notification email:",
+          emailError
+        );
+      }
+
+      res.json({
+        success: true,
+        message: `Set withdrawable earnings to $${newWithdrawableEarnings.toFixed(
+          2
+        )} for ${user.fullName}`,
+        data: {
+          user: user.fullName,
+          oldWithdrawableEarnings: oldWithdrawableEarnings,
+          newWithdrawableEarnings: newWithdrawableEarnings,
+          totalEarnings: user.totalEarnings,
+          reason: reason,
+        },
+      });
+    } catch (error) {
+      console.error("Set withdrawable earnings error:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  }
+);
 
 // Manual profit calculation endpoint for testing
 router.post("/run-profit-calculation", adminProtect, async (req, res) => {

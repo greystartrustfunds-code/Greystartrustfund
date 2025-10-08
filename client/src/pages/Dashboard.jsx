@@ -36,6 +36,7 @@ const Dashboard = ({ setCurrentPage, setIsAuthenticated }) => {
   });
   const [withdrawForm, setWithdrawForm] = useState({
     amount: "",
+    withdrawalSource: "balance", // Default to balance
     accountType: "",
     accountDetails: {
       bankName: "",
@@ -402,9 +403,10 @@ const Dashboard = ({ setCurrentPage, setIsAuthenticated }) => {
   const handleWithdrawSubmit = async (e) => {
     e.preventDefault();
 
-    const { amount, accountType, accountDetails } = withdrawForm;
+    const { amount, withdrawalSource, accountType, accountDetails } =
+      withdrawForm;
 
-    if (!amount || !accountType) {
+    if (!amount || !withdrawalSource || !accountType) {
       alert("Please fill in all required fields");
       return;
     }
@@ -414,8 +416,24 @@ const Dashboard = ({ setCurrentPage, setIsAuthenticated }) => {
       return;
     }
 
-    if (parseFloat(amount) > dashboardData.balance) {
-      alert("Insufficient balance for withdrawal");
+    // Check balance based on withdrawal source
+    const maxAmount =
+      withdrawalSource === "balance"
+        ? dashboardData.balance
+        : dashboardData.withdrawableEarnings;
+
+    if (parseFloat(amount) > maxAmount) {
+      const sourceName =
+        withdrawalSource === "balance" ? "balance" : "withdrawable earnings";
+      alert(`Insufficient ${sourceName} for withdrawal`);
+      return;
+    }
+
+    if (
+      withdrawalSource === "earnings" &&
+      dashboardData.withdrawableEarnings <= 0
+    ) {
+      alert("No earnings are currently approved for withdrawal");
       return;
     }
 
@@ -440,6 +458,7 @@ const Dashboard = ({ setCurrentPage, setIsAuthenticated }) => {
     try {
       const response = await userAPI.withdraw({
         amount: parseFloat(amount),
+        withdrawalSource,
         accountType,
         accountDetails,
       });
@@ -1101,24 +1120,169 @@ const Dashboard = ({ setCurrentPage, setIsAuthenticated }) => {
 
               <form onSubmit={handleWithdrawSubmit} className="space-y-6">
                 {/* Balance Info */}
-                <div className="p-4 bg-orange-500/10 border border-orange-500/30 rounded-lg">
-                  <div className="flex items-center space-x-2">
-                    <svg
-                      className="w-5 h-5 text-orange-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+                <div className="space-y-4">
+                  {/* Available Balance */}
+                  <div className="p-4 bg-orange-500/10 border border-orange-500/30 rounded-lg">
+                    <div className="flex items-center space-x-2">
+                      <svg
+                        className="w-5 h-5 text-orange-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      <span className="text-orange-300 font-medium">
+                        Available Balance: ${dashboardData.balance.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Total Earnings */}
+                  <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
+                    <div className="flex items-center space-x-2">
+                      <svg
+                        className="w-5 h-5 text-green-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
+                        />
+                      </svg>
+                      <span className="text-green-300 font-medium">
+                        Total Earnings: ${dashboardData.earnings.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Available Earnings for Withdrawal */}
+                  <div className="p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                    <div className="flex items-center space-x-2">
+                      <svg
+                        className="w-5 h-5 text-blue-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      <span className="text-blue-300 font-medium">
+                        Available Earnings for Withdrawal:
+                        {dashboardData.withdrawableEarnings > 0 ? (
+                          <span className="text-blue-200 ml-1">
+                            ${dashboardData.withdrawableEarnings.toFixed(2)}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400 ml-1">
+                            Earnings not yet eligible for withdrawal
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Withdrawal Source Selection */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-3">
+                    Select Withdrawal Source
+                  </label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleWithdrawFormChange("withdrawalSource", "balance")
+                      }
+                      className={`p-4 border-2 rounded-lg transition-all ${
+                        withdrawForm.withdrawalSource === "balance"
+                          ? "border-orange-500 bg-orange-500/10"
+                          : "border-slate-600 bg-slate-700/30 hover:border-slate-500"
+                      }`}
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                    <span className="text-orange-300 font-medium">
-                      Available Balance: ${dashboardData.balance.toFixed(2)}
-                    </span>
+                      <div className="flex flex-col items-center space-y-2">
+                        <svg
+                          className="w-8 h-8 text-orange-400"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+                          />
+                        </svg>
+                        <span className="text-white font-medium">
+                          Account Balance
+                        </span>
+                        <span className="text-orange-300 text-sm">
+                          ${dashboardData.balance.toFixed(2)} available
+                        </span>
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleWithdrawFormChange("withdrawalSource", "earnings")
+                      }
+                      disabled={dashboardData.withdrawableEarnings <= 0}
+                      className={`p-4 border-2 rounded-lg transition-all ${
+                        withdrawForm.withdrawalSource === "earnings"
+                          ? "border-blue-500 bg-blue-500/10"
+                          : dashboardData.withdrawableEarnings <= 0
+                          ? "border-gray-600 bg-gray-700/30 opacity-50 cursor-not-allowed"
+                          : "border-slate-600 bg-slate-700/30 hover:border-slate-500"
+                      }`}
+                    >
+                      <div className="flex flex-col items-center space-y-2">
+                        <svg
+                          className="w-8 h-8 text-blue-400"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
+                          />
+                        </svg>
+                        <span className="text-white font-medium">
+                          Approved Earnings
+                        </span>
+                        <span
+                          className={`text-sm ${
+                            dashboardData.withdrawableEarnings > 0
+                              ? "text-blue-300"
+                              : "text-gray-400"
+                          }`}
+                        >
+                          {dashboardData.withdrawableEarnings > 0
+                            ? `$${dashboardData.withdrawableEarnings.toFixed(
+                                2
+                              )} available`
+                            : "Not eligible"}
+                        </span>
+                      </div>
+                    </button>
                   </div>
                 </div>
 
@@ -1135,7 +1299,11 @@ const Dashboard = ({ setCurrentPage, setIsAuthenticated }) => {
                       type="number"
                       step="0.01"
                       min="1"
-                      max={dashboardData.balance}
+                      max={
+                        withdrawForm.withdrawalSource === "balance"
+                          ? dashboardData.balance
+                          : dashboardData.withdrawableEarnings
+                      }
                       value={withdrawForm.amount}
                       onChange={(e) =>
                         handleWithdrawFormChange("amount", e.target.value)
