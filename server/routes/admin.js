@@ -925,11 +925,19 @@ router.post("/users/:id/resume-earnings", adminProtect, async (req, res) => {
 router.get("/users/:id/financial", adminProtect, async (req, res) => {
   try {
     const userId = req.params.id;
+    console.log("🔍 [FINANCIAL] Fetching data for user ID:", userId);
 
     const user = await User.findById(userId).select("-password");
     if (!user) {
+      console.log("❌ [FINANCIAL] User not found:", userId);
       return res.status(404).json({ message: "User not found" });
     }
+    console.log(
+      "✅ [FINANCIAL] User found:",
+      user.email,
+      "Balance:",
+      user.balance
+    );
 
     // Get aggregated financial data
     const [confirmedDeposits, totalProfits, totalWithdrawals, activeDeposits] =
@@ -980,9 +988,22 @@ router.get("/users/:id/financial", adminProtect, async (req, res) => {
         }).select("amount planId planName maturityDate createdAt"),
       ]);
 
+    // Calculate total earnings from profit transactions
+    const calculatedTotalEarnings = totalProfits[0]?.total || 0;
+
+    console.log("📊 [FINANCIAL] Aggregated data:", {
+      deposits: confirmedDeposits[0]?.total || 0,
+      profits: totalProfits[0]?.total || 0,
+      withdrawals: totalWithdrawals[0]?.total || 0,
+      calculatedEarnings: calculatedTotalEarnings,
+      withdrawableEarnings: user.withdrawableEarnings || 0,
+      profitCount: totalProfits[0]?.count || 0,
+    });
+
     const financialData = {
       currentBalance: user.balance || 0,
-      totalEarnings: user.totalEarnings || 0,
+      totalEarnings: calculatedTotalEarnings,
+      withdrawableEarnings: user.withdrawableEarnings || 0,
       totalDeposits: confirmedDeposits[0]?.total || 0,
       totalProfits: totalProfits[0]?.total || 0,
       totalWithdrawals: totalWithdrawals[0]?.total || 0,

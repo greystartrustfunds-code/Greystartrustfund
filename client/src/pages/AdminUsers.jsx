@@ -17,7 +17,9 @@ const AdminUsers = ({ setCurrentPage, setIsAdminAuthenticated }) => {
   const [financialData, setFinancialData] = useState({});
   const [showBalanceModal, setShowBalanceModal] = useState(false);
   const [showEarningsModal, setShowEarningsModal] = useState(false);
+  const [showWithdrawableModal, setShowWithdrawableModal] = useState(false);
   const [selectedFinancialUser, setSelectedFinancialUser] = useState(null);
+  const [actionMenuUser, setActionMenuUser] = useState(null);
   const [adjustmentForm, setAdjustmentForm] = useState({
     amount: "",
     reason: "",
@@ -68,8 +70,11 @@ const AdminUsers = ({ setCurrentPage, setIsAdminAuthenticated }) => {
 
   const fetchFinancialData = useCallback(async (userId) => {
     try {
+      console.log("🔍 [FRONTEND] Fetching financial data for user:", userId);
       const response = await adminUserAPI.getUserFinancial(userId);
+      console.log("📊 [FRONTEND] Financial data response:", response);
       if (response.success) {
+        console.log("✅ [FRONTEND] Setting financial data:", response.data);
         setFinancialData((prev) => ({
           ...prev,
           [userId]: response.data,
@@ -77,7 +82,7 @@ const AdminUsers = ({ setCurrentPage, setIsAdminAuthenticated }) => {
         return response.data;
       }
     } catch (error) {
-      console.error("Failed to fetch financial data:", error);
+      console.error("❌ [FRONTEND] Failed to fetch financial data:", error);
     }
     return null;
   }, []);
@@ -355,6 +360,27 @@ const AdminUsers = ({ setCurrentPage, setIsAdminAuthenticated }) => {
     setShowEarningsModal(true);
   };
 
+  const handleOpenWithdrawableModal = async (user) => {
+    console.log("💵 [MODAL] Opening withdrawable modal for user:", user.email);
+    console.log("💵 [MODAL] User ID:", user._id);
+
+    // Fetch fresh financial data before opening modal
+    const freshData = await fetchFinancialData(user._id);
+
+    console.log("💵 [MODAL] Fresh financial data:", freshData);
+
+    setSelectedFinancialUser(user);
+
+    // Use the fresh data directly
+    const userData = freshData?.financial;
+    setAdjustmentForm({
+      amount: userData?.withdrawableEarnings || "",
+      reason: "",
+    });
+
+    setShowWithdrawableModal(true);
+  };
+
   const handleAdjustBalance = async (e) => {
     e.preventDefault();
     if (
@@ -435,6 +461,50 @@ const AdminUsers = ({ setCurrentPage, setIsAdminAuthenticated }) => {
       alert(
         error.response?.data?.message ||
           "Failed to adjust earnings. Please try again."
+      );
+    }
+  };
+
+  const handleSetWithdrawableEarnings = async (e) => {
+    e.preventDefault();
+    if (
+      !selectedFinancialUser ||
+      adjustmentForm.amount === "" ||
+      !adjustmentForm.reason
+    ) {
+      alert("Please fill in all fields");
+      return;
+    }
+
+    try {
+      const response = await adminUserAPI.setWithdrawableEarnings(
+        selectedFinancialUser._id,
+        {
+          amount: parseFloat(adjustmentForm.amount),
+          reason: adjustmentForm.reason,
+        }
+      );
+
+      if (response.success) {
+        alert(
+          `Withdrawable earnings set to $${parseFloat(
+            adjustmentForm.amount
+          ).toFixed(2)} for ${selectedFinancialUser.name}!`
+        );
+        setShowWithdrawableModal(false);
+        setSelectedFinancialUser(null);
+        setAdjustmentForm({ amount: "", reason: "" });
+        // Refresh financial data
+        fetchFinancialData(selectedFinancialUser._id);
+        fetchUsers();
+      } else {
+        alert(response.message || "Failed to set withdrawable earnings");
+      }
+    } catch (error) {
+      console.error("Withdrawable earnings error:", error);
+      alert(
+        error.response?.data?.message ||
+          "Failed to set withdrawable earnings. Please try again."
       );
     }
   };
@@ -927,25 +997,25 @@ const AdminUsers = ({ setCurrentPage, setIsAdminAuthenticated }) => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-400">
                         $
-                        {financialData[user._id]
+                        {financialData[user._id]?.financial
                           ? (
-                              financialData[user._id].totalDeposits || 0
+                              financialData[user._id].financial.totalDeposits || 0
                             ).toFixed(2)
                           : "0.00"}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-400">
                         $
-                        {financialData[user._id]
+                        {financialData[user._id]?.financial
                           ? (
-                              financialData[user._id].totalEarnings || 0
+                              financialData[user._id].financial.totalEarnings || 0
                             ).toFixed(2)
                           : "0.00"}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-purple-400">
                         $
-                        {financialData[user._id]
+                        {financialData[user._id]?.financial
                           ? (
-                              financialData[user._id].currentBalance || 0
+                              financialData[user._id].financial.currentBalance || 0
                             ).toFixed(2)
                           : (user.balance || 0).toFixed(2)}
                       </td>
@@ -953,186 +1023,15 @@ const AdminUsers = ({ setCurrentPage, setIsAdminAuthenticated }) => {
                         {formatDate(user.createdAt)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex space-x-3">
-                          <button
-                            onClick={() => handleEditUser(user)}
-                            className="inline-flex items-center px-3 py-1 rounded-md text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 transition-all"
-                          >
-                            <svg
-                              className="w-4 h-4 mr-1"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                              />
-                            </svg>
-                            Edit
-                          </button>
-
-                          {/* Ping notification buttons */}
-                          {user.pingNotification?.isActive ? (
-                            <button
-                              onClick={() => handleUnpingUser(user._id)}
-                              className="inline-flex items-center px-3 py-1 rounded-md text-orange-400 hover:text-orange-300 hover:bg-orange-500/10 transition-all"
-                              title="Remove ping notification"
-                            >
-                              <svg
-                                className="w-4 h-4 mr-1"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
-                                />
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"
-                                />
-                              </svg>
-                              Unping
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => handlePingUser(user)}
-                              className="inline-flex items-center px-3 py-1 rounded-md text-yellow-400 hover:text-yellow-300 hover:bg-yellow-500/10 transition-all"
-                              title="Send ping notification"
-                            >
-                              <svg
-                                className="w-4 h-4 mr-1"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M15 17h5l-5 5v-5zM11 13H6l5-5v5z"
-                                />
-                              </svg>
-                              Ping
-                            </button>
-                          )}
-
-                          {/* Earnings pause/resume buttons */}
-                          {user.earningsPaused ? (
-                            <button
-                              onClick={() => handleResumeEarnings(user._id)}
-                              className="inline-flex items-center px-3 py-1 rounded-md text-green-400 hover:text-green-300 hover:bg-green-500/10 transition-all"
-                              title="Resume user earnings"
-                            >
-                              <svg
-                                className="w-4 h-4 mr-1"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M19 10a9 9 0 11-18 0 9 9 0 0118 0z"
-                                />
-                              </svg>
-                              Resume
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => handlePauseEarnings(user._id)}
-                              className="inline-flex items-center px-3 py-1 rounded-md text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all"
-                              title="Pause user earnings"
-                            >
-                              <svg
-                                className="w-4 h-4 mr-1"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                                />
-                              </svg>
-                              Pause
-                            </button>
-                          )}
-
-                          {/* Financial adjustment buttons */}
-                          <button
-                            onClick={() => handleOpenBalanceModal(user)}
-                            className="inline-flex items-center px-3 py-1 rounded-md text-purple-400 hover:text-purple-300 hover:bg-purple-500/10 transition-all"
-                            title="Adjust user balance"
-                          >
-                            <svg
-                              className="w-4 h-4 mr-1"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                              />
-                            </svg>
-                            +Bal
-                          </button>
-
-                          <button
-                            onClick={() => handleOpenEarningsModal(user)}
-                            className="inline-flex items-center px-3 py-1 rounded-md text-green-400 hover:text-green-300 hover:bg-green-500/10 transition-all"
-                            title="Adjust user earnings"
-                          >
-                            <svg
-                              className="w-4 h-4 mr-1"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
-                              />
-                            </svg>
-                            +Earn
-                          </button>
-
-                          <button
-                            onClick={() => handleDeleteUser(user._id)}
-                            className="inline-flex items-center px-3 py-1 rounded-md text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all"
-                          >
-                            <svg
-                              className="w-4 h-4 mr-1"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                              />
-                            </svg>
-                            Delete
-                          </button>
-                        </div>
+                        <button
+                          onClick={() => setActionMenuUser(user)}
+                          className="inline-flex items-center px-4 py-2 rounded-lg text-white bg-slate-600 hover:bg-slate-500 transition-all"
+                        >
+                          Actions
+                          <svg className="w-4 h-4 ml-2 -mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </button>
                       </td>
                     </tr>
                   ))
@@ -1167,6 +1066,87 @@ const AdminUsers = ({ setCurrentPage, setIsAdminAuthenticated }) => {
           </div>
         )}
       </div>
+
+      {/* Action Menu Modal */}
+      {actionMenuUser && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50" onClick={() => setActionMenuUser(null)}>
+          <div className="bg-gradient-to-br from-slate-800 to-slate-700 rounded-2xl border border-slate-600 shadow-2xl p-6 w-full max-w-xs" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h3 className="text-lg font-bold text-white">Actions</h3>
+                <p className="text-sm text-gray-400">{actionMenuUser.name}</p>
+              </div>
+              <button onClick={() => setActionMenuUser(null)} className="text-gray-400 hover:text-white p-1 rounded-full hover:bg-slate-600">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="grid grid-cols-1 gap-3">
+              <button
+                onClick={() => { handleEditUser(actionMenuUser); setActionMenuUser(null); }}
+                className="inline-flex items-center justify-center w-full px-4 py-3 rounded-lg text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 transition-all"
+              >
+                Edit User Details
+              </button>
+              {actionMenuUser.pingNotification?.isActive ? (
+                <button
+                  onClick={() => { handleUnpingUser(actionMenuUser._id); setActionMenuUser(null); }}
+                  className="inline-flex items-center justify-center w-full px-4 py-3 rounded-lg text-orange-400 hover:text-orange-300 bg-orange-500/10 hover:bg-orange-500/20 transition-all"
+                >
+                  Remove Ping
+                </button>
+              ) : (
+                <button
+                  onClick={() => { handlePingUser(actionMenuUser); setActionMenuUser(null); }}
+                  className="inline-flex items-center justify-center w-full px-4 py-3 rounded-lg text-yellow-400 hover:text-yellow-300 bg-yellow-500/10 hover:bg-yellow-500/20 transition-all"
+                >
+                  Send Ping
+                </button>
+              )}
+              {actionMenuUser.earningsPaused ? (
+                <button
+                  onClick={() => { handleResumeEarnings(actionMenuUser._id); setActionMenuUser(null); }}
+                  className="inline-flex items-center justify-center w-full px-4 py-3 rounded-lg text-green-400 hover:text-green-300 bg-green-500/10 hover:bg-green-500/20 transition-all"
+                >
+                  Resume Earnings
+                </button>
+              ) : (
+                <button
+                  onClick={() => { handlePauseEarnings(actionMenuUser._id); setActionMenuUser(null); }}
+                  className="inline-flex items-center justify-center w-full px-4 py-3 rounded-lg text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 transition-all"
+                >
+                  Pause Earnings
+                </button>
+              )}
+              <button
+                onClick={() => { handleOpenBalanceModal(actionMenuUser); setActionMenuUser(null); }}
+                className="inline-flex items-center justify-center w-full px-4 py-3 rounded-lg text-purple-400 hover:text-purple-300 bg-purple-500/10 hover:bg-purple-500/20 transition-all"
+              >
+                Adjust Balance
+              </button>
+              <button
+                onClick={() => { handleOpenEarningsModal(actionMenuUser); setActionMenuUser(null); }}
+                className="inline-flex items-center justify-center w-full px-4 py-3 rounded-lg text-green-400 hover:text-green-300 bg-green-500/10 hover:bg-green-500/20 transition-all"
+              >
+                Adjust Earnings
+              </button>
+              <button
+                onClick={() => { handleOpenWithdrawableModal(actionMenuUser); setActionMenuUser(null); }}
+                className="inline-flex items-center justify-center w-full px-4 py-3 rounded-lg text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 transition-all"
+              >
+                Set Withdrawable
+              </button>
+              <button
+                onClick={() => { handleDeleteUser(actionMenuUser._id); setActionMenuUser(null); }}
+                className="inline-flex items-center justify-center w-full px-4 py-3 rounded-lg text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 transition-all mt-2 border-t border-slate-600 pt-3"
+              >
+                Delete User
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Edit User Modal */}
       {showEditModal && (
@@ -1502,7 +1482,7 @@ const AdminUsers = ({ setCurrentPage, setIsAdminAuthenticated }) => {
                 <span className="font-medium">Current Balance:</span> $
                 {financialData[
                   selectedFinancialUser?._id
-                ]?.currentBalance?.toFixed(2) || "0.00"}
+                ]?.financial?.currentBalance?.toFixed(2) || "0.00"}
               </p>
             </div>
 
@@ -1625,7 +1605,7 @@ const AdminUsers = ({ setCurrentPage, setIsAdminAuthenticated }) => {
                 <span className="font-medium">Total Earnings:</span> $
                 {financialData[
                   selectedFinancialUser?._id
-                ]?.totalEarnings?.toFixed(2) || "0.00"}
+                ]?.financial?.totalEarnings?.toFixed(2) || "0.00"}
               </p>
             </div>
 
@@ -1710,6 +1690,145 @@ const AdminUsers = ({ setCurrentPage, setIsAdminAuthenticated }) => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Set Withdrawable Earnings Modal */}
+      {showWithdrawableModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-gradient-to-br from-slate-800/95 to-slate-700/95 backdrop-blur-xl rounded-2xl border border-slate-600/50 shadow-2xl w-full max-w-md">
+            <div className="p-6">
+              <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent mb-6">
+                💵 Set Withdrawable Earnings
+              </h3>
+
+              <div className="mb-6 p-4 bg-slate-700/30 rounded-lg border border-slate-600/30">
+                <p className="text-gray-300 text-sm mb-2">
+                  <span className="font-medium">User:</span>{" "}
+                  {selectedFinancialUser?.fullName ||
+                    selectedFinancialUser?.name}
+                </p>
+                <p className="text-gray-300 text-sm mb-2">
+                  <span className="font-medium">Total Earnings:</span>{" "}
+                  <span className="text-green-400 font-semibold">
+                    $
+                    {financialData[
+                      selectedFinancialUser?._id
+                    ]?.financial?.totalEarnings?.toFixed(2) || "0.00"}
+                  </span>
+                </p>
+                <p className="text-gray-300 text-sm mb-3">
+                  <span className="font-medium">Current Withdrawable:</span>{" "}
+                  <span className="text-blue-400 font-semibold">
+                    $
+                    {financialData[
+                      selectedFinancialUser?._id
+                    ]?.financial?.withdrawableEarnings?.toFixed(2) || "0.00"}
+                  </span>
+                </p>
+                <p className="text-yellow-400 text-xs flex items-start space-x-1">
+                  <span>⚠️</span>
+                  <span>
+                    Set the amount user can withdraw from their earnings. Cannot
+                    exceed total earnings.
+                  </span>
+                </p>
+              </div>
+
+              <form
+                onSubmit={handleSetWithdrawableEarnings}
+                className="space-y-6"
+              >
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Withdrawable Amount
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <span className="text-gray-400">$</span>
+                    </div>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max={
+                        financialData[selectedFinancialUser?._id]?.financial
+                          ?.totalEarnings || 0
+                      }
+                      value={adjustmentForm.amount}
+                      onChange={(e) =>
+                        setAdjustmentForm({
+                          ...adjustmentForm,
+                          amount: e.target.value,
+                        })
+                      }
+                      className="w-full pl-8 pr-4 py-3 bg-slate-700/50 border border-slate-600 text-white placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                      placeholder="0.00"
+                      required
+                    />
+                  </div>
+                  <p className="text-gray-400 text-xs mt-1">
+                    Max: $
+                    {financialData[
+                      selectedFinancialUser?._id
+                    ]?.financial?.totalEarnings?.toFixed(2) || "0.00"}
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Reason
+                  </label>
+                  <textarea
+                    value={adjustmentForm.reason}
+                    onChange={(e) =>
+                      setAdjustmentForm({
+                        ...adjustmentForm,
+                        reason: e.target.value,
+                      })
+                    }
+                    rows={3}
+                    className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 text-white placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    placeholder="e.g., Approved for withdrawal based on investment maturity"
+                    required
+                  />
+                </div>
+
+                <div className="flex justify-end space-x-4 pt-6 border-t border-slate-600/50">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowWithdrawableModal(false);
+                      setSelectedFinancialUser(null);
+                      setAdjustmentForm({ amount: "", reason: "" });
+                    }}
+                    className="px-6 py-3 text-gray-300 hover:text-white hover:bg-slate-600/50 rounded-lg font-medium transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg font-medium shadow-lg transition-all transform hover:scale-105 flex items-center space-x-2"
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                    <span>Set Withdrawable Amount</span>
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}

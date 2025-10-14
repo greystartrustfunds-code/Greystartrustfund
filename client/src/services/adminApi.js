@@ -103,6 +103,14 @@ export const adminUserAPI = {
     const response = await adminApi.post(`/users/${id}/add-earnings`, data);
     return response.data;
   },
+
+  setWithdrawableEarnings: async (id, data) => {
+    const response = await adminApi.post(
+      `/users/${id}/withdrawable-earnings`,
+      data
+    );
+    return response.data;
+  },
 };
 
 export const adminTransactionAPI = {
