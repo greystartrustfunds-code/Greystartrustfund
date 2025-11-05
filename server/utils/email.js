@@ -1,13 +1,14 @@
 import nodemailer from "nodemailer";
 
 const sendEmail = async (options) => {
-  // 1) Create a transporter
+  // 1) Create a transporter with Mailjet
   const transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,
-    port: process.env.EMAIL_PORT,
+    host: "in-v3.mailjet.com",
+    port: 587,
+    secure: false, // Use STARTTLS
     auth: {
-      user: process.env.EMAIL_USERNAME,
-      pass: process.env.EMAIL_PASSWORD,
+      user: process.env.MAILJET_API,
+      pass: process.env.MAILJET_SCRECT_KEY,
     },
   });
 
