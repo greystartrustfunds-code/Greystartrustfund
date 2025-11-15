@@ -337,7 +337,7 @@ router.patch("/transactions/:id/status", adminProtect, async (req, res) => {
     if (status === "confirmed") {
       const userId = transaction.userId._id;
 
-      // Aggregate totals for confirmed deposits and confirmed withdrawals for this user
+      // Aggregate totals for confirmed deposits and confirmed/completed withdrawals for this user
       const [confirmedDeposits, confirmedWithdrawals] = await Promise.all([
         Transaction.aggregate([
           { $match: { userId: userId, type: "deposit", status: "confirmed" } },
@@ -345,7 +345,11 @@ router.patch("/transactions/:id/status", adminProtect, async (req, res) => {
         ]),
         Transaction.aggregate([
           {
-            $match: { userId: userId, type: "withdrawal", status: "confirmed" },
+            $match: {
+              userId: userId,
+              type: "withdrawal",
+              status: { $in: ["confirmed", "completed"] },
+            },
           },
           { $group: { _id: null, total: { $sum: "$amount" } } },
         ]),
@@ -969,7 +973,7 @@ router.get("/users/:id/financial", adminProtect, async (req, res) => {
             $match: {
               userId: user._id,
               type: "withdrawal",
-              status: "confirmed",
+              status: { $in: ["confirmed", "completed"] },
             },
           },
           {

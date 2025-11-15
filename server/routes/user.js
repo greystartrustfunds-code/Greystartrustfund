@@ -72,13 +72,13 @@ router.get("/dashboard", authenticateToken, async (req, res) => {
       },
     ]);
 
-    // Calculate withdrawals
+    // Calculate withdrawals (both confirmed and completed)
     const withdrawals = await Transaction.aggregate([
       {
         $match: {
           userId: req.user._id,
           type: "withdrawal",
-          status: "confirmed",
+          status: { $in: ["confirmed", "completed"] },
         },
       },
       {
@@ -706,18 +706,14 @@ router.post("/withdraw", authenticateToken, async (req, res) => {
       }
     } else if (withdrawalSource === "earnings") {
       if (!user.withdrawableEarnings || user.withdrawableEarnings <= 0) {
-        return res
-          .status(400)
-          .json({
-            message: "No earnings are currently approved for withdrawal",
-          });
+        return res.status(400).json({
+          message: "No earnings are currently approved for withdrawal",
+        });
       }
       if (withdrawalAmount > user.withdrawableEarnings) {
-        return res
-          .status(400)
-          .json({
-            message: "Insufficient withdrawable earnings for withdrawal",
-          });
+        return res.status(400).json({
+          message: "Insufficient withdrawable earnings for withdrawal",
+        });
       }
     }
 
